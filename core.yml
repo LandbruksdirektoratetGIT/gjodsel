@@ -1,0 +1,1460 @@
+openapi: 3.0.0
+info:
+  title: LDIR Gjødselregister API
+  description: >-
+    Dette API-et gir programmatisk tilgang til kjernevirksomhetsenheter og regulatoriske prosesser for forvaltning  
+    av bruk og rapportering av gjødsel i landbrukssektoren, slik det kreves av norske forskrifter.  
+    Det gjør det mulig for landbruksforetak, kommuner og tilsynsmyndigheter å registrere, oppdatere og hente ut data  
+    relatert til gjødselbruk, arealforvaltning, regulatoriske søknader og dokumentasjon av etterlevelse.
+  version: 0.0.1
+servers:
+  - url: 'https://gjoedsel-fagsystem-utv.non-prod.landbruksdirektoratet.no/api'
+paths:
+  /vedlegg:
+    get:
+      summary: List opp vedlegg
+      description: List opp vedlegg relevante for dette landbruksforetaket
+      operationId: hentAlleVedlegg
+      tags: [ vedlegg ]
+      parameters:
+        - $ref: '#/components/parameters/filterParam'
+        - $ref: '#/components/parameters/limitParam'
+        - $ref: '#/components/parameters/offsetParam'
+        - $ref: '#/components/parameters/sortParam'
+      responses:
+        200:
+          description: Liste over tidligere opplastede vedlegg relevante for dette landbruksforetaket
+          content:
+            application/vnd.api+json:
+              schema:
+                $ref: '#/components/schemas/VedleggListeResponsDto'
+    post:
+      summary: Last opp vedlegg
+      description: >- 
+        Last opp vedlegg til senere bruk i søknader, meldinger og kommentarer.
+        MERK: Vedlegg som ikke knyttes til søknader, meldinger og kommentarer vil bli slettet etter 24 timer.
+      operationId: lastOppVedlegg
+      tags: [ vedlegg ]
+      requestBody:
+        required: true
+        description: >-
+          En [multipart-melding](https://www.rfc-editor.org/rfc/rfc2387) der første halvdel
+                  av meldingen er JSON-formatert metadata, og andre halvdel er det faktiske vedlegget.
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/VedleggForespoerselDto'
+      responses:
+        201:
+          description: Opprettet vedlegg
+          content:
+            application/vnd.api+json:
+              schema:
+                $ref: '#/components/schemas/VedleggEnkelResponsDto'
+        400:
+          $ref: '#/components/responses/BadRequest'
+  /vedlegg/{vedleggId}:
+    parameters:
+      - name: vedleggId
+        in: path
+        schema:
+          type: integer
+        required: true
+        description: ID til vedlegget
+    get:
+      summary: Hent metadata tilhørende et vedlegg
+      operationId: hentEttVedleggMetadata
+      tags: [ vedlegg ]
+      responses:
+        200:
+          description: Ett enkelt vedlegg
+          content:
+            application/vnd.api+json:
+              schema:
+                $ref: '#/components/schemas/VedleggEnkelResponsDto'
+  /vedlegg/{vedleggId}/fil:
+    parameters:
+      - name: vedleggId
+        in: path
+        schema:
+          type: integer
+        required: true
+        description: ID til vedlegget
+    get:
+      summary: Hent et vedlegg
+      description: Hent et enkelt vedlegg identifisert med ID
+      operationId: hentEttVedleggFil
+      tags: [ vedlegg ]
+      responses:
+        200:
+          description: Ett enkelt vedlegg
+          content:
+            application/octet-stream:
+              schema:
+                type: string
+                format: binary
+    delete:
+      summary: Slett et vedlegg
+      description: >- 
+        Slett et tidligere opplastet vedlegg. Denne operasjonen vil feile som vedlegget er knyttet til en ressurs
+        som ikke kan endres på (typisk søknader som er under behandling eller tilsvarende)
+      operationId: slettEttVedlegg
+      tags: [ vedlegg ]
+      responses:
+        204:
+          description: Vedlegget er slettet
+        400:
+          $ref: '#/components/responses/BadRequest'
+
+  /stedfester:
+    get:
+      summary: List opp stedfester (geometrier)
+      description: List opp arealgeometrier relevant for dette landbruksforetaket
+      operationId: hentAlleStedfester
+      tags: [ stedfesting ]
+      parameters:
+        - name: bbox
+          in: query
+          description: Geografisk skranke for søket. [west longitude, south latitude, east longitude, north latitude]
+          schema:
+            type: array
+            minItems: 4
+            maxItems: 4
+            items:
+              type: number
+        - $ref: '#/components/parameters/filterParam'
+        - $ref: '#/components/parameters/limitParam'
+        - $ref: '#/components/parameters/offsetParam'
+        - $ref: '#/components/parameters/sortParam'
+      responses:
+        200:
+          description: Liste over kjente stedfester relevante for dette landbruksforetaket
+          content:
+            application/vnd.api+json:
+              schema:
+                $ref: '#/components/schemas/StedfesteListeResponsDto'
+    post:
+      summary: Send inn et stedfeste
+      description: Send inn et nytt stedfeste som senere skal benyttes til å kartfeste en melding eller søknad
+      operationId: lastOppStedfesting
+      tags: [ stedfesting ]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/StedfesteDto'
+      responses:
+        201:
+          description: Opprettet stedfeste
+          content:
+            application/vnd.api+json:
+              schema:
+                $ref: '#/components/schemas/StedfesteEnkelResponsDto'
+        400:
+          $ref: '#/components/responses/BadRequest'
+  /stedfester/{stedfesteId}:
+    parameters:
+      - name: stedfesteId
+        in: path
+        schema:
+          type: integer
+        required: true
+        description: ID til stedfeste
+    get:
+      summary: Hent en stedfesting
+      description: Hent ett enkelt stedfeste identifisert med ID
+      operationId: hentEnStedfesting
+      tags: [ stedfesting ]
+      parameters:
+        - $ref: '#/components/parameters/includeParam'
+      responses:
+        200:
+          description: Ett enkelt stedfeste
+          content:
+            application/vnd.api+json:
+              schema:
+                $ref: '#/components/schemas/StedfesteEnkelResponsDto'
+  /gjoedseltyper:
+    get:
+      summary: List opp gjødseltyper
+      description: Hent en liste over kjente gjødseltyper og karakteristikker
+      operationId: hentAlleGjoedseltyper
+      tags: [ gjoedseltype ]
+      parameters:
+        - $ref: '#/components/parameters/filterParam'
+        - $ref: '#/components/parameters/limitParam'
+        - $ref: '#/components/parameters/offsetParam'
+        - $ref: '#/components/parameters/sortParam'
+      responses:
+        200:
+          description: Liste over gjødseltyper som matcher søkekriteriene
+          content:
+            application/vnd.api+json:
+              schema:
+                $ref: '#/components/schemas/GjoedseltypeListeResponsDto'
+  /gjoedseltyper/{gjoedseltypeId}:
+    get:
+      summary: Hent en gjødseltype
+      description: Hent en gjødseltype identifisert med ID
+      operationId: hentEnGjoedseltype
+      tags: [ gjoedseltype]
+      parameters:
+        - name: gjoedseltypeId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        200:
+          description: Gjødseltype
+          content:
+            application/vnd.api+json:
+              schema:
+                $ref: '#/components/schemas/GjoedseltypeEnkelResponsDto'
+  /ledetekster:
+    get:
+      summary: List opp ledetekster
+      description: >-
+        Hent ledetekster for inndataelementer som kan brukes til tooltips og tilsvarende mot sluttbruker
+        Ledetekstenes navn korresponderer med feltenes JSONPath.
+        Imidlertid vil alltid første ledd være inndataelementets type (som spesifisert i denne spesifikasjonen).
+        Eksempel:
+        - I en melding om spredning av slam, vil spredetidspunkt ha navnet SlamMelding.spredetidspunkt, selv om JSONPath
+        til dette feltet i en faktisk forespørsel er melding.spredetidspunkt.
+        - På samme måte i slam-meldingen er melding.gjoedsel.gjødselTypeId ledeteksten tilgjengelig under GjoedselBeskrivelse.gjoedselTypeId
+      operationId: hentAlleLedetekster
+      tags: [ ledetekster ]
+      parameters:
+        - $ref: '#/components/parameters/filterParam'
+        - $ref: '#/components/parameters/limitParam'
+        - $ref: '#/components/parameters/offsetParam'
+        - $ref: '#/components/parameters/sortParam'
+      responses:
+        200:
+          description: Liste over ledetekster som matcher søkekriteriene
+          content:
+            application/vnd.api+json:
+              schema:
+                $ref: '#/components/schemas/LedetekstListeResponsDto'
+  /meldinger:
+    get:
+      summary: List opp meldinger
+      description: Hent en liste over tidligere innsendte meldinger som er relevante for dette landbruksforetaket.
+      operationId: hentAlleMeldinger
+      tags: [ melding ]
+      parameters:
+        - $ref: '#/components/parameters/filterParam'
+        - $ref: '#/components/parameters/limitParam'
+        - $ref: '#/components/parameters/offsetParam'
+        - $ref: '#/components/parameters/sortParam'
+        - $ref: '#/components/parameters/includeParam'
+      responses:
+        200:
+          description: Liste over meldinger som matcher søkekriteriene
+          content:
+            application/vnd.api+json:
+              schema:
+                $ref: '#/components/schemas/MeldingListeResponsDto'
+    post:
+      summary: Send inn en melding
+      description: Send inn en ny melding som representerer dette landbruksforetaket
+      operationId: sendInnMelding
+      tags: [ melding ]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MeldingForespoerselDto'
+      responses:
+        201:
+          description: Opprettet melding
+          content:
+            application/vnd.api+json:
+              schema:
+                $ref: '#/components/schemas/MeldingEnkelResponsDto'
+        400:
+          $ref: '#/components/responses/BadRequest'
+  /meldinger/{meldingId}:
+    parameters:
+      - name: meldingId
+        in: path
+        schema:
+          type: integer
+        required: true
+        description: ID til meldingen
+    get:
+      summary: Hent en melding
+      description: Hent en enkelt melding identifisert med ID
+      operationId: hentEnMelding
+      tags: [ melding ]
+      parameters:
+        -  $ref: '#/components/parameters/includeParam'
+      responses:
+        200:
+          description: En enkelt melding
+          content:
+            application/vnd.api+json:
+              schema:
+                $ref: '#/components/schemas/MeldingEnkelResponsDto'
+    delete:
+      summary: Trekk tilbake en melding
+      description: >-
+        Trekk tilbake en melding identifisert med ID.
+        MERK: Meldingen kan KUN slettes frem til den har blitt åpnet av forvaltningen!
+      operationId: slettEnMelding
+      tags: [ melding ]
+      responses:
+        204:
+          description: Søknaden er trukket
+        400:
+          $ref: '#/components/responses/BadRequest'
+  /meldinger/{meldingId}/kommentarer:
+    parameters:
+      - name: meldingId
+        in: path
+        schema:
+          type: integer
+        required: true
+        description: ID til meldingen
+    get:
+      summary: Hent kommentarer til en melding
+      description: Hent en liste over kommentarer knyttet til denne meldingen
+      operationId: hentMeldingskommentarer
+      tags: [ melding ]
+      parameters:
+        - $ref: '#/components/parameters/limitParam'
+        - $ref: '#/components/parameters/offsetParam'
+        - $ref: '#/components/parameters/sortParam'
+      responses:
+        200:
+          description: Liste over kommentarer
+          content:
+            application/vnd.api+json:
+              schema:
+                $ref: '#/components/schemas/KommentarListeResponsDto'
+    post:
+      summary: Legg til en kommentar
+      description: Legg til en ny kommentar til denne meldingen
+      operationId: leggTilMeldingskommentar
+      tags: [ melding ]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/KommentarForespoerselDto'
+      responses:
+        201:
+          description: Opprettet kommentar
+          content:
+            application/vnd.api+json:
+              schema:
+                $ref: '#/components/schemas/KommentarEnkelResponsDto'
+        400:
+          $ref: '#/components/responses/BadRequest'
+
+  /soeknader:
+    get:
+      summary: List opp søknader
+      description: Hent en liste over tidligere innsendte søknader som er relevante for dette landbruksforetaket.
+      operationId: hentAlleSoeknader
+      tags: [ soeknad ]
+      parameters:
+        - $ref: '#/components/parameters/filterParam'
+        - $ref: '#/components/parameters/limitParam'
+        - $ref: '#/components/parameters/offsetParam'
+        - $ref: '#/components/parameters/sortParam'
+        - $ref: '#/components/parameters/includeParam'
+      responses:
+        200:
+          description: Liste over søknader som matcher søkekriteriene
+          content:
+            application/vnd.api+json:
+              schema:
+                $ref: '#/components/schemas/SoeknadListeResponsDto'
+    post:
+      summary: Send inn en søknad
+      description: Send inn en ny søknad som representerer dette landbruksforetaket
+      operationId: sendInnSoeknad
+      tags: [ soeknad ]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SoeknadForespoerselDto'
+      responses:
+        201:
+          description: Opprettet søknad
+          content:
+            application/vnd.api+json:
+              schema:
+                $ref: '#/components/schemas/SoeknadEnkelResponsDto'
+        400:
+          $ref: '#/components/responses/BadRequest'
+  /soeknader/{soeknadId}:
+    parameters:
+      - name: soeknadId
+        in: path
+        schema:
+          type: integer
+        required: true
+        description: ID til søknaden
+    get:
+      summary: Hent en søknad
+      description: Hent en enkelt søknad identifisert med ID
+      operationId: hentEnSoeknad
+      tags: [ soeknad ]
+      parameters:
+        -  $ref: '#/components/parameters/includeParam'
+      responses:
+        200:
+          description: En enkelt søknad
+          content:
+            application/vnd.api+json:
+              schema:
+                $ref: '#/components/schemas/SoeknadEnkelResponsDto'
+    delete:
+      summary: Trekk tilbake en søknad
+      description: >-
+        Trekk tilbake en søknad identifisert med ID. MERK: Søknaden kan KUN slettes frem til søknadsbehandlingen starter!
+      operationId: slettEnSoeknad
+      tags: [ soeknad ]
+      responses:
+        204:
+          description: Søknaden er trukket tilbake
+  /soeknader/{soeknadId}/kommentarer:
+    parameters:
+      - name: soeknadId
+        in: path
+        schema:
+          type: integer
+        required: true
+        description: ID til søknaden
+    get:
+      summary: Hent kommentarer til en søknad
+      description: Hent en liste over kommentarer knyttet til denne søknaden
+      operationId: hentSoeknadKommentarer
+      tags: [ soeknad ]
+      parameters:
+        - $ref: '#/components/parameters/limitParam'
+        - $ref: '#/components/parameters/offsetParam'
+        - $ref: '#/components/parameters/sortParam'
+      responses:
+        200:
+          description: Liste over kommentarer
+          content:
+            application/vnd.api+json:
+              schema:
+                $ref: '#/components/schemas/KommentarListeResponsDto'
+    post:
+      summary: Legg til en kommentar
+      description: Legg til en ny kommentar til denne søknaden
+      operationId: leggTilSoeknadKommentar
+      tags: [ soeknad ]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/KommentarForespoerselDto'
+      responses:
+        201:
+          description: Opprettet kommentar
+          content:
+            application/vnd.api+json:
+              schema:
+                $ref: '#/components/schemas/KommentarEnkelResponsDto'
+        400:
+          $ref: '#/components/responses/BadRequest'
+  /vedtak:
+    get:
+      summary: List opp vedtak
+      description: Hent en liste over vedtak som er relevante for dette landbruksforetaket.
+      operationId: hentAlleVedtak
+      tags: [ vedtak ]
+      parameters:
+        - $ref: '#/components/parameters/filterParam'
+        - $ref: '#/components/parameters/limitParam'
+        - $ref: '#/components/parameters/offsetParam'
+        - $ref: '#/components/parameters/sortParam'
+        - $ref: '#/components/parameters/includeParam'
+      responses:
+        200:
+          description: Liste over vedtak som matcher søkekriteriene
+          content:
+            application/vnd.api+json:
+              schema:
+                $ref: '#/components/schemas/VedtakListeResponsDto'
+  /vedtak/{vedtakId}:
+    get:
+      summary: Hent et vedtak
+      description: Hent ett enkelt vedtak identifisert med ID
+      operationId: hentEttVedtak
+      tags: [ vedtak ]
+      parameters:
+        - name: vedtakId
+          in: path
+          schema:
+            type: integer
+          required: true
+          description: ID til vedtaket som skal hentes
+        - $ref: '#/components/parameters/includeParam'
+      responses:
+        200:
+          description: Ett enkelt vedtak
+          content:
+            application/vnd.api+json:
+              schema:
+                $ref: '#/components/schemas/VedtakEnkelResponsDto'
+
+components:
+  parameters:
+    filterParam:
+      name: filter
+      in: query
+      schema:
+        type: string
+      description: FIQL-syntaks søkespørring for å filtrere responsen. Vanligvis er alle feltene i de returnerte objektene søkbare nøkler for dette søket.
+      required: false
+    limitParam:
+      name: 'page[limit]'
+      in: query
+      schema:
+        type: integer
+      description: Maks antall elementer som skal hentes
+      required: false
+    offsetParam:
+      name: 'page[offset]'
+      in: query
+      schema:
+        type: integer
+      description: Startposisjon for henting av elementer ved paginering
+      required: false
+    sortParam:
+      name: sort
+      in: query
+      schema:
+        type: string
+      description: Sorter elementene i responsen. Vanligvis kan alle felter i objektet sorteres. Kommaseparerte feltnavn. Sorterer stigende med mindre feltnavnet har et minustegn (-) foran.
+      required: false
+    includeParam:
+      name: include
+      in: query
+      schema:
+        type: string
+      description: >-
+        Inkluder relaterte data i responsen. Kan typisk brukes på alle felter som er til stede i "links". For eksempel: 
+        /soeknader inneholder linker til vedtak og stedfesting, som kan inkluderes.
+  responses:
+    BadRequest:
+      description: En ugyldig forespørsel ble innsendt
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/FeilResponsDto'
+  schemas:
+    id:
+      type: integer
+      description: Numerisk identifikator for dette objektet
+    url:
+      type: string
+      format: uri
+      description: En URL til en ressurs
+    stedfestingId:
+      type: integer
+      description: ID til et stedfesting
+    jordproeveId:
+      type: string
+      format: uuid
+      description: ID til en jordprøve tilgjengeliggjort i Jordprøveregisteret
+    tidspunkt:
+      type: string
+      format: date-time
+      description: Ett ISO-8601-formatert tidsstempel
+    TidsintervallDto:
+      type: object
+      properties:
+        fra:
+          $ref: '#/components/schemas/tidspunkt'
+        til:
+          $ref: '#/components/schemas/tidspunkt'
+
+
+    # JSON:API basics
+    LenkerBasisDto:
+      type: object
+      properties:
+        self:
+          $ref: '#/components/schemas/url'
+      required: [ self ]
+
+    LenkerPagineringDto:
+      type: object
+      allOf:
+        - $ref: '#/components/schemas/LenkerBasisDto'
+      properties:
+        first:
+          $ref: '#/components/schemas/url'
+        last:
+          $ref: '#/components/schemas/url'
+        prev:
+          $ref: '#/components/schemas/url'
+        next:
+          $ref: '#/components/schemas/url'
+
+    ResponsType:
+      type: string
+      enum:
+        - STEDFESTE
+        - VEDLEGG
+        - KOMMENTAR
+        - GJOEDSELTYPE
+        - LEDETEKST
+        - MELDING
+        - SOEKNAD
+        - VEDTAK
+
+    ResponsData:
+      type: object
+      properties:
+        id:
+          $ref: '#/components/schemas/id'
+        type:
+          $ref: '#/components/schemas/ResponsType'
+      required: [ id, type ]
+      oneOf:
+        - $ref: '#/components/schemas/StedfesteResponsData'
+        - $ref: '#/components/schemas/VedleggResponsData'
+        - $ref: '#/components/schemas/KommentarResponsData'
+        - $ref: '#/components/schemas/GjoedseltypeResponsData'
+        - $ref: '#/components/schemas/MeldingResponsData'
+        - $ref: '#/components/schemas/SoeknadResponsData'
+        - $ref: '#/components/schemas/VedtakResponsData'
+      discriminator:
+        propertyName: type
+        mapping:
+          STEDFESTE: '#/components/schemas/StedfesteResponsData'
+          VEDLEGG: '#/components/schemas/VedleggResponsData'
+          KOMMENTAR: '#/components/schemas/KommentarResponsData'
+          GJOEDSELTYPE: '#/components/schemas/GjoedseltypeResponsData'
+          MELDING: '#/components/schemas/MeldingResponsData'
+          SOEKNAD: '#/components/schemas/SoeknadResponsData'
+          VEDTAK: '#/components/schemas/VedtakResponsData'
+
+    RessursIdentifikator:
+      type: object
+      properties:
+        id:
+          $ref: '#/components/schemas/id'
+        type:
+          $ref: '#/components/schemas/ResponsType'
+      required: [ id, type ]
+
+
+    Respons:
+      description: Rotobjekt som inneholder JSON:API-formaterte objekter, lenker og eventuelle inkluderte etterspurte
+        ressurser
+      type: object
+      properties:
+        links:
+          $ref: '#/components/schemas/LenkerBasisDto'
+        included:
+          type: array
+          items:
+            $ref: '#/components/schemas/ResponsData'
+
+    DataBasis:
+      description: Objekt som representerer en enkelt entitet
+      type: object
+      allOf:
+        - $ref: '#/components/schemas/RessursIdentifikator'
+      properties:
+        links:
+          allOf:
+            - $ref: '#/components/schemas/LenkerBasisDto'
+
+    ErrorDto:
+      type: object
+      properties:
+        source:
+          type: object
+          properties:
+            pointer:
+              type: string
+            parameter:
+              type: string
+            header:
+              type: string
+        id:
+          type: string
+        title:
+          type: string
+        detail:
+          type: string
+        status:
+          type: integer
+      required: [ id, title, detail, status ]
+
+    FeilResponsDto:
+      description: >-
+        Feilrespons med detaljer om hva som gikk galt. Serveren har avvist forespørselen, og  
+        brukeren må forvente at ingen endringer er gjort i systemet.
+      properties:
+        errors:
+          type: array
+          items:
+           $ref: '#/components/schemas/ErrorDto'
+
+    PaginertResponsDto:
+      allOf:
+        - $ref: '#/components/schemas/Respons'
+      properties:
+        links:
+          $ref: '#/components/schemas/LenkerPagineringDto'
+      required: [ links ]
+
+    ForetakDto:
+      type: object
+      properties:
+        orgNummer:
+          type: string
+        orgNavn:
+          type: string
+      required: [ id, type, orgNummer, orgNavn ]
+    ArealType:
+      type: string
+      enum: [ FULLDYRKA_JORD, OVERFLATEDYRKA_JORD, INNMARKSBEITE ]
+    StedfesteDto:
+      type: object
+      description: Ett stedfeste er et kartfestet areal tilhørende en eiendom
+      properties:
+        gyldighet:
+          $ref: '#/components/schemas/TidsintervallDto'
+        areal:
+          $ref: './geojson.yml#/components/schemas/GeometryElement'
+        arealType:
+          $ref: '#/components/schemas/ArealType'
+      required: [ gyldighet, areal, arealType ]
+    StedfesteResponsData:
+      type: object
+      allOf:
+        - $ref: '#/components/schemas/DataBasis'
+      properties:
+        attributes:
+          allOf:
+            - $ref: '#/components/schemas/StedfesteDto'
+          properties:
+            opprettet:
+              $ref: '#/components/schemas/tidspunkt'
+            eiendomId:
+              type: string
+              format: uuid
+          required: [ opprettet, eiendomId ]
+      required: [ attributes ]
+
+    StedfesteEnkelResponsDto:
+      type: object
+      allOf:
+        - $ref: '#/components/schemas/Respons'
+      properties:
+        data:
+          $ref: '#/components/schemas/StedfesteResponsData'
+    StedfesteListeResponsDto:
+      allOf:
+        - $ref: '#/components/schemas/PaginertResponsDto'
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/StedfesteResponsData'
+      required: [ data ]
+    VedleggDto:
+      type: object
+      description: Vedlegg som skal innsendes
+      properties:
+        tittel:
+          type: string
+          description: Beskrivende tittel på vedlegget
+        vedleggType:
+          type: string
+          enum: [ KARTSKISSE, FOTO, BREV, ANNET ]
+          description: Type vedlegg
+        filType:
+          type: string
+          enum: [ PDF, JPEG, PNG, DOCX ]
+      example:
+        tittel: Gammelt stedfesting
+        vedleggType: KARTSKISSE
+        filType: JPEG
+    VedleggForespoerselDto:
+      allOf:
+        - $ref: '#/components/schemas/VedleggDto'
+      properties:
+        fil:
+          type: string
+          format: binary
+      example:
+        tittel: Gammelt stedfesting
+        vedleggType: KARTSKISSE
+        filType: JPEG
+        data: <BASE64-STRING>
+
+    VedleggResponsData:
+      allOf:
+        - $ref: '#/components/schemas/DataBasis'
+      properties:
+        attributes:
+          allOf:
+            - $ref: '#/components/schemas/VedleggDto'
+        links:
+          allOf:
+            - $ref: '#/components/schemas/LenkerBasisDto'
+          properties:
+            fil:
+              $ref: '#/components/schemas/url'
+          required: [ fil ]
+      required: [ attributes, links ]
+
+    VedleggEnkelResponsDto:
+      allOf:
+        - $ref: '#/components/schemas/Respons'
+      properties:
+        data:
+          $ref: '#/components/schemas/VedleggResponsData'
+      required: [ data ]
+      example:
+        data:
+          id: 0
+          type: VEDLEGG
+          links:
+            self: https://gjoedsel.landbruksdirektoratet.no/vedlegg/0
+            fil: https://gjoedsel.landbruksdirektoratet.no/vedlegg/0/fil
+          attributes:
+            tittel: Gammelt stedfesting
+            vedleggType: KARTSKISSE
+            filType: JPEG
+
+    VedleggListeResponsDto:
+      allOf:
+        - $ref: '#/components/schemas/PaginertResponsDto'
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/VedleggResponsData'
+      required: [ data ]
+
+    # Kommentarer
+    KommentarBaseDto:
+      type: object
+      description: En kommentar i dialogen mellom foretak og forvaltning
+      properties:
+        tekst:
+          type: string
+          description: Kommentarens innhold
+      required: [ tekst ]
+
+    KommentarForespoerselDto:
+      allOf:
+        - $ref: '#/components/schemas/KommentarBaseDto'
+      properties:
+        stedfester:
+          type: array
+          items:
+            $ref: '#/components/schemas/stedfestingId'
+        vedlegg:
+          type: array
+          items:
+            $ref: '#/components/schemas/id'
+      example:
+        tekst: Gammelt stedfesting fra eiendomsregisteret vedlagt.
+        vedlegg: [1, 2]
+
+    ForfatterDto:
+      type: object
+      properties:
+        rolle:
+          type: string
+          enum: [ FORETAK, KOMMUNE, STATSFORVALTER ]
+          description: Forfatterens rolle i systemet
+        navn:
+          type: string
+          description: Navn på forfatteren
+      required: [ rolle, navn ]
+
+    KommentarResponsData:
+      allOf:
+        - $ref: '#/components/schemas/DataBasis'
+      properties:
+        attributes:
+          allOf:
+            - $ref: '#/components/schemas/KommentarBaseDto'
+          properties:
+            forfatter:
+              $ref: '#/components/schemas/ForfatterDto'
+            tidspunkt:
+              $ref: '#/components/schemas/tidspunkt'
+          required: [ forfatter, tidspunkt ]
+      required: [ attributes ]
+
+
+    KommentarEnkelResponsDto:
+      allOf:
+        - $ref: '#/components/schemas/Respons'
+      properties:
+        data:
+          $ref: '#/components/schemas/KommentarResponsData'
+      required: [ data ]
+      example:
+        data:
+          id: 0
+          type: KOMMENTAR
+          attributes:
+            forfatter:
+              rolle: KOMMUNE
+              navn: Saksbehandler Ståle
+            tidspunkt: 2025-10-06T07:39:59.742Z
+            tekst: Vennligst korriger stedfesting så spredeareal er mer enn 25 meter unna Glommas bredder
+          links:
+            self: https://gjoedsel.landbruksdirektoratet.no/meldinger/0/kommentarer/0
+          relationships:
+            vedlegg:
+              data:
+                - links:
+                    self: https://gjoedsel.landbruksdirektoratet.no/vedlegg/0
+                  id: 0
+                  type: VEDLEGG
+            stedfeste:
+              data:
+                - links:
+                    self: https://gjoedsel.landbruksdirektoratet.no/stedfester/0
+                  id: 0
+                  type: STEDFESTE
+
+    KommentarListeResponsDto:
+      allOf:
+        - $ref: '#/components/schemas/PaginertResponsDto'
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/KommentarResponsData'
+      required: [ data ]
+
+    # Meldinger
+    GjoedselBeskrivelseDto:
+      type: object
+      properties:
+        mengdePlantetilgjengeligPKg:
+          type: number
+        mengdePlantetilgjengeligNKg:
+          type: number
+        gjoedselTypeId:
+          type: integer
+          description: ID på gjødseltype som spesifisert på /gjoedseltyper
+      required: [ mengdePlantetilgjengeligFosforKg, gjoedselTypeId ]
+
+    GjoedselOpphav:
+      type: string
+      enum: [ GRIS, STORFE, SMAAFE, HEST, FJOERFE, ANDRE_HUSDYR ]
+    GjoedselKategori:
+      type: string
+      enum: [ MINERALSK, ORGANISK, SLAM ]
+    Gjoedseltype:
+      type: object
+      properties:
+        beskrivelse:
+          type: string
+        opphav:
+          $ref: '#/components/schemas/GjoedselOpphav'
+        kategori:
+          $ref: '#/components/schemas/GjoedselKategori'
+        kgPPerIndivid:
+          type: number
+        kgNPerIndivid:
+          type: number
+        faktorForNH3Tap:
+          type: number
+      required: [ opphav, kategori, kgPPerIndivid, kgNPerIndivid, faktorForNH3Tap ]
+
+    GjoedseltypeResponsData:
+      allOf:
+        - $ref: '#/components/schemas/DataBasis'
+      properties:
+        attributes:
+          allOf:
+            - $ref: '#/components/schemas/Gjoedseltype'
+      required: [ attributes ]
+
+    GjoedseltypeEnkelResponsDto:
+      allOf:
+        - $ref: '#/components/schemas/Respons'
+      properties:
+        data:
+          $ref: '#/components/schemas/GjoedseltypeResponsData'
+      required: [ data ]
+      example:
+        data:
+          id: 0
+          type: GJOEDSELTYPE
+          attributes:
+            beskrivelse: Ammekyr
+            opphav: STORFE
+            kategori: ORGANISK
+            kgPPerIndivid: 8
+            kgNPerIndivid: 66
+            faktorForNH3Tap: 0.14
+          links:
+            self: http://gjoedsel.landbruksdirektoratet.no/gjoedseltyper/0
+
+    GjoedseltypeListeResponsDto:
+      allOf:
+        - $ref: '#/components/schemas/PaginertResponsDto'
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/GjoedseltypeResponsData'
+      required: [ data ]
+      
+    LedetekstResponsData:
+      allOf:
+        - $ref: '#/components/schemas/DataBasis'
+      properties:
+        attributes:
+          properties:
+            navn:
+              type: string
+              description: JSONPath referanse til inndatafelt prefikset med typenavn
+            tittel:
+              type: string
+              description: Kort tittel som beskriver feltet
+            beskrivelse:
+              type: string
+              description: Lengre beskrivelse av feltet
+          required: [ navn, tittel, beskrivelse ]
+      required: [ attributes ]
+
+    LedetekstEnkelResponsDto:
+      allOf:
+        - $ref: '#/components/schemas/Respons'
+      properties:
+        data:
+          $ref: '#/components/schemas/LedetekstResponsData'
+      required: [ data ]
+      example:
+        data:
+          id: 0
+          type: LEDETEKST
+          attributes:
+            navn: SlamMelding.spredetidspunkt
+            tittel: Tidspunkt for slamspredning
+            beskrivelse: Faktisk tidspunkt når slammet skal spres. Merk at dette tidspunktet må være *minst* 14 dager fra nå.
+
+    LedetekstListeResponsDto:
+      allOf:
+        - $ref: '#/components/schemas/PaginertResponsDto'
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/LedetekstResponsData'
+      required: [ data ]
+
+    MeldingsType:
+      type: string
+      description: Mulige gyldige gjødselmeldinger
+      enum:
+        - BRUK_AV_SLAM
+        - BALANSEGJOEDSLING
+        - GJOEDSLINGSPLAN
+        - GJOEDSLINGSJOURNAL
+        - BORTSKAFFING
+        - AREAL_MED_FOSFORKREVENDE_VEKSTER
+    MeldingsStatus:
+      type: string
+      description: Mulige gyldige tilstander på en melding
+      enum: [ INNSENDT, AKSEPTERT, AVVIST ]
+
+    MeldingBaseDto:
+      type: object
+      properties:
+        type:
+          $ref: '#/components/schemas/MeldingsType'
+      required: [ type ]
+    SlamMeldingDto:
+      description: Melding om bruk av slam
+      allOf:
+        - $ref: '#/components/schemas/MeldingBaseDto'
+      properties:
+        spredetidspunkt:
+          $ref: '#/components/schemas/tidspunkt'
+        behandlingsmaate:
+          type: string
+        gjoedsel:
+          $ref: '#/components/schemas/GjoedselBeskrivelseDto'
+        jordproeveId:
+          $ref: '#/components/schemas/jordproeveId'
+        andreForhold:
+          type: string
+      required: [ spredetidspunkt, behandlingsmaate, gjoedsel, jordproeveId ]
+    BalansegjoedslingMeldingDto:
+      description: >-
+        Melding om at foretaket igangsetter en treårsperiode med balansegjødsling som tilsidesetter ordinære
+        gjødslingsgrenser.
+      allOf:
+        - $ref: '#/components/schemas/MeldingBaseDto'
+      properties:
+        jordproeveId:
+          $ref: '#/components/schemas/jordproeveId'
+      required: [ jordproeveId ]
+    GjoedselsplanLinjeDto:
+      type: object
+      properties:
+        tidspunkt:
+          $ref: '#/components/schemas/tidspunkt'
+        stedfestingId:
+          $ref: '#/components/schemas/stedfestingId'
+        forgroede:
+          type: string
+        avlingstype:
+          type: string
+        avlingsMengdeTonnPerDaa:
+          type: number
+        gjoedsel:
+          $ref: '#/components/schemas/GjoedselBeskrivelseDto'
+      required: [ tidspunkt, stedfestingId, forgroede, avlingstype, avlingsMengdeTonnPerDaa, gjoedsel ]
+    GjoedselsplanMeldingDto:
+      description: >-
+        Innsending av gjødselsplan for en vekstsesong
+      allOf:
+        - $ref: '#/components/schemas/MeldingBaseDto'
+      properties:
+        vekstsesong:
+          $ref: '#/components/schemas/TidsintervallDto'
+        gjoedselsbehov:
+          $ref: '#/components/schemas/GjoedselBeskrivelseDto'
+        planlinjer:
+          type: array
+          items:
+            $ref: '#/components/schemas/GjoedselsplanLinjeDto'
+      required: [ vekstsesong, gjoedselsbehov, planlinjer ]
+    GjoedselsjournalLinjeDto:
+      type: object
+      properties:
+        tidspunkt:
+          $ref: '#/components/schemas/tidspunkt'
+        stedfestingId:
+          $ref: '#/components/schemas/stedfestingId'
+        gjoedsel:
+          $ref: '#/components/schemas/GjoedselBeskrivelseDto'
+      required: [ tidspunkt, stedfestingId, gjoedsel ]
+    GjoedselsjournalMeldingDto:
+      description: >-
+        Innsending av gjødselsjournal for en vekstsesong
+      allOf:
+        - $ref: '#/components/schemas/MeldingBaseDto'
+      properties:
+        vekstsesong:
+          $ref: '#/components/schemas/TidsintervallDto'
+        journallinjer:
+          type: array
+          items:
+            $ref: '#/components/schemas/GjoedselsjournalLinjeDto'
+      required: [ vekstsesong, journallinjer ]
+    BortskaffingsMeldingDto:
+      description: >-
+        Melding fra bortskaffer om gjødsel som skal bortskaffes
+      allOf:
+        - $ref: '#/components/schemas/MeldingBaseDto'
+      properties:
+        leveransetid:
+          $ref: '#/components/schemas/tidspunkt'
+        leverandoerOrgNr:
+          type: string
+        mottagerOrgNr:
+          type: string
+        gjoedsel:
+          $ref: '#/components/schemas/GjoedselBeskrivelseDto'
+      required: [ leveransetid, leverandoerOrgNr, mottagerOrgNr, gjoedsel ]
+    FosforkrevendeVeksterMeldingDto:
+      description: >-
+        Melding om et areal på landbrukseiendommen som skal benyttes til fosforkrevende vekster og som derfor skal
+        gjødsles utover gjeldende grenser.
+      allOf:
+        - $ref: '#/components/schemas/MeldingBaseDto'
+      properties:
+        avlingstype:
+          type: string
+        jordproeveId:
+          $ref: '#/components/schemas/jordproeveId'
+      required: [ avlingstype, jordproeveId ]
+
+    MeldingDto:
+      description: >-
+        Meldinger er beskjeder fra foretaket til kommune eller statsforvalter om endringer eller tiltak foretaket
+        har til hensikt å gjennomføre, som ikke resulterer i et vedtak fra myndighetene,
+        kun en bekreftelse på at meldingen er godtatt.
+      type: object
+      properties:
+        type:
+          $ref: '#/components/schemas/MeldingsType'
+      required: [ type ]
+      oneOf:
+        - $ref: '#/components/schemas/SlamMeldingDto'
+        - $ref: '#/components/schemas/BalansegjoedslingMeldingDto'
+        - $ref: '#/components/schemas/GjoedselsplanMeldingDto'
+        - $ref: '#/components/schemas/GjoedselsjournalMeldingDto'
+        - $ref: '#/components/schemas/BortskaffingsMeldingDto'
+        - $ref: '#/components/schemas/FosforkrevendeVeksterMeldingDto'
+      discriminator:
+        propertyName: type
+        mapping:
+          BRUK_AV_SLAM: '#/components/schemas/SlamMeldingDto'
+          BALANSEGJOEDSLING: '#/components/schemas/BalansegjoedslingMeldingDto'
+          GJOEDSLINGSPLAN: '#/components/schemas/GjoedselsplanMeldingDto'
+          GJOEDSLINGSJOURNAL: '#/components/schemas/GjoedselsjournalMeldingDto'
+          BORTSKAFFING: '#/components/schemas/BortskaffingsMeldingDto'
+          AREAL_MED_FOSFORKREVENDE_VEKSTER: '#/components/schemas/FosforkrevendeVeksterMeldingDto'
+
+    MeldingForespoerselDto:
+      description: Inndata for en ny melding
+      properties:
+        melding:
+          $ref: '#/components/schemas/MeldingDto'
+        stedfester:
+          type: array
+          items:
+            $ref: '#/components/schemas/stedfestingId'
+        vedlegg:
+          type: array
+          items:
+            $ref: '#/components/schemas/id'
+      required: [ melding ]
+      
+    MeldingResponsData:
+      allOf:
+        - $ref: '#/components/schemas/DataBasis'
+      properties:
+        attributes:
+          properties:
+            innsendt:
+              $ref: '#/components/schemas/tidspunkt'
+            status:
+              $ref: '#/components/schemas/MeldingsStatus'
+            melding:
+              $ref: '#/components/schemas/MeldingDto'
+          required: [ innsendt, status, melding, links ]
+        links:
+          allOf:
+            - $ref: '#/components/schemas/LenkerBasisDto'
+          properties:
+            jordproeve:
+              $ref: '#/components/schemas/url'
+            gjoedselType:
+              $ref: '#/components/schemas/url'
+            foretak:
+              $ref: '#/components/schemas/url'
+            kommentarer:
+              $ref: '#/components/schemas/url'
+          required: [ foretak, kommentarer ]
+      required: [ attributes, links ]
+
+    MeldingEnkelResponsDto:
+      allOf:
+        - $ref: '#/components/schemas/Respons'
+      properties:
+        data:
+          $ref: '#/components/schemas/MeldingResponsData'
+      required: [ data ]
+
+    MeldingListeResponsDto:
+      allOf:
+        - $ref: '#/components/schemas/PaginertResponsDto'
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/MeldingResponsData'
+      required: [ data ]
+
+    # Søknader
+
+    SoeknadsType:
+      description: Mulige gyldige søknadstyper
+      type: string
+      enum: [ INNMARKSBEITE_SOM_SPREDEAREAL, GJOEDSLING_OVER_GRENSEVERDIER ]
+    SoeknadsStatus:
+      description: Mulige tilstander til en søknad
+      enum: [ MOTTATT, UNDER_BEHANDLING, TILBAKESENDT, BEHANDLET ]
+
+    SoeknadDto:
+      description: >-
+        Søknader er henvendelser fra foretaket om ønskede endringer som krever godkjenning og til slutt vedtak fra
+        forvaltningen for at foretaket skal kunne gjennomføre endringene.
+      oneOf:
+        - $ref: '#/components/schemas/InnmarksbeiteSomSpredearealSoeknadDto'
+        - $ref: '#/components/schemas/GjoedslingOverGrenseverdiSoeknadDto'
+      properties:
+        type:
+          $ref: '#/components/schemas/SoeknadsType'
+      required: [ type ]
+      discriminator:
+        propertyName: type
+        mapping:
+          INNMARKSBEITE_SOM_SPREDEAREAL: '#/components/schemas/InnmarksbeiteSomSpredearealSoeknadDto'
+          GJOEDSLING_OVER_GRENSEVERDIER: '#/components/schemas/GjoedslingOverGrenseverdiSoeknadDto'
+    SoeknadForespoerselDto:
+      description: Inndata for en ny søknad
+      properties:
+        soeknad:
+          $ref: '#/components/schemas/SoeknadDto'
+        stedfester:
+          type: array
+          items:
+            $ref: '#/components/schemas/stedfestingId'
+        vedlegg:
+          type: array
+          items:
+            $ref: '#/components/schemas/id'
+      required: [ soeknad ]
+
+    SoeknadBaseDto:
+      type: object
+      properties:
+        type:
+          $ref: '#/components/schemas/SoeknadsType'
+      required: [ type ]
+
+    InnmarksbeiteSomSpredearealSoeknadDto:
+      description: Søknad som gjelder innmarksbeite som spredeareal
+      allOf:
+        - $ref: '#/components/schemas/SoeknadBaseDto'
+
+    GjoedslingOverGrenseverdiSoeknadDto:
+      description: Søknad som gjelder gjødsling over grenseverdier
+      allOf:
+        - $ref: '#/components/schemas/SoeknadBaseDto'
+      properties:
+        jordproeveId:
+          $ref: '#/components/schemas/jordproeveId'
+        behovsbeskrivelse:
+          type: string
+      required: [ jordproeveId, behovsbeskrivelse ]
+
+    SoeknadResponsData:
+      allOf:
+        - $ref: '#/components/schemas/DataBasis'
+      properties:
+        attributes:
+          properties:
+            opprettet:
+              $ref: '#/components/schemas/tidspunkt'
+            status:
+              $ref: '#/components/schemas/SoeknadsStatus'
+            soeknad:
+              $ref: '#/components/schemas/SoeknadDto'
+          required: [ opprettet, status, soeknad ]
+        links:
+          allOf:
+            - $ref: '#/components/schemas/LenkerBasisDto'
+          properties:
+            vedtak:
+              $ref: '#/components/schemas/url'
+            jordproeve:
+              $ref: '#/components/schemas/url'
+            foretak:
+              $ref: '#/components/schemas/url'
+            kommentarer:
+              $ref: '#/components/schemas/url'
+          required: [ foretak, kommentarer ]
+      required: [ attributes, links ]
+      
+    SoeknadEnkelResponsDto:
+      allOf:
+        - $ref: '#/components/schemas/Respons'
+      properties:
+        data:
+          $ref: '#/components/schemas/SoeknadResponsData'
+      required: [ data ]
+
+    SoeknadListeResponsDto:
+      allOf:
+        - $ref: '#/components/schemas/PaginertResponsDto'
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/SoeknadResponsData'
+      required: [ data ]
+
+    # Vedtak
+    VedtakStatus:
+      description: Mulige tilstander til et vedtak
+      enum: [ UNDER_UTARBEIDELSE, VEDTATT, AVVIST ]
+
+    VedtakDto:
+      description: >-
+        Vedtak er enten avgjørelser
+        fattet av forvaltningen som svar på en tidligere innsendt sak, eller ad-hoc vedtak gjort som følge av endrede
+        forhold i fylket eller områdene rundt landbruksforetaket.
+      type: object
+      properties:
+        status:
+          $ref: '#/components/schemas/VedtakStatus'
+        gyldighetsperiode:
+          $ref: '#/components/schemas/TidsintervallDto'
+        begrunnelse:
+          type: string
+        rettsligGrunnlag:
+          type: string
+        fattetAv:
+          type: object
+          properties:
+            behandlendeEnhet:
+              type: string
+            saksbehandler:
+              type: string
+            godkjenner:
+              type: string
+      required: [ status ]
+
+    VedtakResponsData:
+      allOf:
+        - $ref: '#/components/schemas/DataBasis'
+      properties:
+        attributes:
+          allOf:
+            - $ref: '#/components/schemas/VedtakDto'
+        links:
+          allOf:
+            - $ref: '#/components/schemas/LenkerBasisDto'
+          properties:
+            soeknad:
+              $ref: '#/components/schemas/url'
+            foretak:
+              $ref: '#/components/schemas/url'
+          required: [ foretak ]
+      required: [ attributes, links ]
+
+    VedtakEnkelResponsDto:
+      allOf:
+        - $ref: '#/components/schemas/Respons'
+      properties:
+        data:
+          $ref: '#/components/schemas/VedtakResponsData'
+      required: [ data ]
+
+    VedtakListeResponsDto:
+      allOf:
+        - $ref: '#/components/schemas/PaginertResponsDto'
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/VedtakResponsData'
+      required: [ data ]
+

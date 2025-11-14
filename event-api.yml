@@ -1,0 +1,250 @@
+asyncapi: 2.6.0
+info:
+  title: LDIR Hendelser-API
+  version: 0.0.1
+  description: |-
+    LDIR Hendelser-API gir sanntidsvarsler om endringer på ressurser i LDIR Gjødselregister API.
+    Hendelser inneholder minimal informasjon - akkurat nok til å identifisere hva som endret seg
+    og hvor man kan hente den komplette ressursen.
+
+    ### Grunnprinsipp:
+    Hendelser signaliserer "noe skjedde" med ressurser og en lenke til den endrede ressursen.
+    Klienter bør hente fullstendige detaljer fra kjerneAPI-et ved å bruke den oppgitte ressurs-URL-en.
+
+    ### Forutsetninger:
+    Abonnering på oppdateringer krever vellykket onboarding og autentisering av landbruksforetak.
+    Din applikasjon må være [registrert i Maskinporten og Altinn som "leverandør"](https://docs.digdir.no/docs/Maskinporten/maskinporten_func_systembruker.html)
+
+    ### Hendelseslevering:
+    - Ved tilkobling spilles alle ventende uerkjennede hendelser av på nytt
+    - Hendelser må erkjennes ved mottak; Ellers vil de bli levert på nytt
+    - Ett foretak per socket-tilkobling (token-scoped)
+
+defaultContentType: application/json
+
+servers:
+  prod:
+    url: 'https://event-api-utv.non-prod.landbruksdirektoratet.no/api'
+    protocol: wss
+    description: >-
+      WebSocket-endepunkt for mottak av LDIR-hendelser. Tilkoblingen er scopet til foretaket
+      representert av autentiseringstoken.
+    security:
+      - bearerAuth: []
+
+channels:
+  /gjoedsel:
+    subscribe:
+      operationId: mottaHendelser
+      summary: Motta hendelser om endringer i gjødselressurser
+      message:
+        oneOf:
+          - $ref: '#/components/messages/meldingEndret'
+          - $ref: '#/components/messages/soeknadEndret'
+          - $ref: '#/components/messages/vedtakEndret'
+    publish:
+      operationId: erkjennHendelse
+      summary: Erkjenn mottatte hendelser
+      message:
+        $ref: '#/components/messages/erkjenn'
+
+components:
+  messages:
+    meldingEndret:
+      name: meldingEndret
+      title: Melding Endret
+      summary: En melding har blitt opprettet eller dens status har endret seg
+      payload:
+        $ref: '#/components/schemas/MeldingEndretHendelse'
+
+    soeknadEndret:
+      name: soeknadEndret
+      title: Søknad Endret
+      summary: En søknad har blitt opprettet eller dens status har endret seg
+      payload:
+        $ref: '#/components/schemas/SoeknadEndretHendelse'
+
+    vedtakEndret:
+      name: vedtakEndret
+      title: Vedtak Endret
+      summary: Et vedtak har blitt opprettet eller dens status har endret seg
+      payload:
+        $ref: '#/components/schemas/VedtakEndretHendelse'
+
+    erkjenn:
+      name: erkjenn
+      title: Erkjenn en melding
+      summary: >-
+        Bekrefter en mottatt hendelse ved dens ID. Hvis denne meldingen ikke sendes,
+        vil hendelsen bli sendt på nytt på denne eller en senere websocket
+      payload:
+        $ref: '#/components/schemas/Erkjennelse'
+
+  schemas:
+    # Basis-typer
+    RessursBasis:
+      type: object
+      description: Minimumsinformasjon om en endret ressurs
+      properties:
+        id:
+          type: integer
+          minimum: 0
+          description: ID til ressursen
+        type:
+          type: string
+          description: Ressurstype
+        url:
+          type: string
+          format: uri
+          description: URL for å hente fullstendig ressurs fra kjerneAPI-et
+      required: [id, url]
+
+    HendelseBasis:
+      type: object
+      description: Basis for alle hendelsestyper
+      properties:
+        endring:
+          type: string
+          description: Hva som skjedde med ressursen
+        tidspunkt:
+          type: string
+          format: date-time
+          description: Når hendelsen skjedde
+        type:
+          type: string
+          description: Hendelsestype
+        id:
+          type: string
+          description: Unik ID for denne hendelsen. Må erkjennes for å unngå redelivery.
+      required: [endring, tidspunkt, type, id]
+
+    # Konkrete hendelser
+    MeldingEndretHendelse:
+      type: object
+      allOf:
+        - $ref: '#/components/schemas/HendelseBasis'
+        - properties:
+            ressurs:
+              allOf:
+                - $ref: '#/components/schemas/RessursBasis'
+                - type: object
+                  properties:
+                    underType:
+                      type: string
+                      description: Type melding (BRUK_AV_SLAM, BALANSEGJOEDSLING, etc)
+                    status:
+                      type: string
+                      enum: [INNSENDT, AKSEPTERT, AVVIST]
+                      description: Oppdatert status på meldingen
+                  required: [type, status]
+            type:
+              type: string
+              enum: [MELDING_ENDRET]
+            endring:
+              type: string
+              enum: [OPPRETTET, STATUS_ENDRET, KOMMENTAR_LAGT_TIL]
+          required: [underType, endring, ressurs]
+      example:
+        ressurs:
+          id: 123
+          type: MELDING
+          underType: BRUK_AV_SLAM
+          status: AKSEPTERT
+          url: https://gjoedsel.landbruksdirektoratet.no/meldinger/123
+        type: MELDING_ENDRET
+        endring: STATUS_ENDRET
+        tidspunkt: '2025-10-03T10:30:00Z'
+        id: msg_abc123def456
+
+    SoeknadEndretHendelse:
+      type: object
+      allOf:
+        - $ref: '#/components/schemas/HendelseBasis'
+        - properties:
+            ressurs:
+              allOf:
+                - $ref: '#/components/schemas/RessursBasis'
+                - properties:
+                    underType:
+                      type: string
+                      description: Type søknad (INNMARKSBEITE_SOM_SPREDEAREAL, etc)
+                    status:
+                      type: string
+                      enum: [MOTTATT, UNDER_BEHANDLING, TILBAKESENDT, BEHANDLET]
+                      description: Oppdatert status på søknaden
+                  required: [underType, status]
+            type:
+              type: string
+              enum: [SOEKNAD_ENDRET]
+            endring:
+              type: string
+              enum: [OPPRETTET, STATUS_ENDRET, VEDTAK_TILGJENGELIG, KOMMENTAR_LAGT_TIL]
+          required: [type, endring, ressurs]
+      example:
+        ressurs:
+          id: 456
+          type: SOEKNAD
+          underType: GJOEDSLING_OVER_GRENSEVERDIER
+          status: BEHANDLET
+          url: https://gjoedsel.landbruksdirektoratet.no/soeknader/456
+        type: SOEKNAD_ENDRET
+        endring: VEDTAK_TILGJENGELIG
+        tidspunkt: '2025-10-03T14:15:00Z'
+        id: msg_xyz789ghi012
+
+    VedtakEndretHendelse:
+      type: object
+      allOf:
+        - $ref: '#/components/schemas/HendelseBasis'
+        - properties:
+            ressurs:
+              allOf:
+                - $ref: '#/components/schemas/RessursBasis'
+                - properties:
+                    status:
+                      type: string
+                      enum: [UNDER_UTARBEIDELSE, VEDTATT, AVVIST]
+                      description: Status på vedtaket
+                    soeknadId:
+                      type: integer
+                      minimum: 0
+                      description: ID til tilhørende søknad, hvis relevant
+                      nullable: true
+                  required: [status]
+            type:
+              type: string
+              enum: [VEDTAK_ENDRET]
+            endring:
+              type: string
+              enum: [OPPRETTET, STATUS_ENDRET]
+          required: [ressurs, type, endring]
+      example:
+        ressurs:
+          id: 789
+          status: VEDTATT
+          url: https://gjoedsel.landbruksdirektoratet.no/vedtak/789
+          soeknadId: 456
+        type: VEDTAK_ENDRET
+        endring: OPPRETTET
+        tidspunkt: '2025-10-03T14:15:00Z'
+        id: msg_def456ghi789
+
+    Erkjennelse:
+      type: object
+      description: Erkjennelse av mottatt hendelse
+      properties:
+        type:
+          type: string
+          enum: [ERKJENNELSE]
+        hendelseId:
+          type: string
+          description: ID til hendelsen som erkjennes
+      required: [type, hendelseId]
+      example:
+        type: ERKJENNELSE
+        hendelseId: msg_abc123def456
+
+  securitySchemes:
+    bearerAuth:
+      type: openIdConnect
+      openIdConnectUrl: https://platform.altinn.no/authorization/api/v1/authorize
