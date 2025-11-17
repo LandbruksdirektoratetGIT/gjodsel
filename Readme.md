@@ -1,5 +1,6 @@
 # Landbruksdirektoratet Gjødselsregister API
-API for at systemvareleverandører i landbrukssektoren kan koble seg opp mot LDIR sitt fagsystem for håndtering av gjødsel.
+API for at systemvareleverandører i landbrukssektoren kan koble seg opp mot LDIR sitt fagsystem for håndtering av gjødsel. Du kan lese mer om prosjektet her på Landbrukdsdirektoratet sine nettsider: https://www.landbruksdirektoratet.no/nb/jordbruk/miljo-og-klima/husdyrgjodsel-og-gjodsling/utvikling-av-digitale-stotteverktoy-for-oppfolging-av-gjodselbrukforskriften
+
 ## Bakgrunn for prosjektet
 Utvikle systemer som effektivt støtter gjødselbrukere å etterleve det nye gjødselbrukregelverket https://lovdata.no/dokument/SF/forskrift/2025-01-29-115.
 
