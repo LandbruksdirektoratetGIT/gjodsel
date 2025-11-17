@@ -2,7 +2,7 @@
 API for systemvareleverandører som skal integrere seg mot Landbruksdirektoratets Gjødselsregister. Du kan lese mer om prosjektet her på Landbrukdsdirektoratet sine nettsider: https://www.landbruksdirektoratet.no/nb/jordbruk/miljo-og-klima/husdyrgjodsel-og-gjodsling/utvikling-av-digitale-stotteverktoy-for-oppfolging-av-gjodselbrukforskriften
 
 ## Bakgrunn for prosjektet
-Utvikle systemer som effektivt støtter gjødselbrukere å etterleve det nye gjødselbrukregelverket https://lovdata.no/dokument/SF/forskrift/2025-01-29-115.
+Utvikle systemer som effektivt støtter gjødselbrukere i å etterleve det nye gjødselbrukregelverket https://lovdata.no/dokument/SF/forskrift/2025-01-29-115.
 
 # API beskrivelse
 API-et eksponerer endepunkter for integrasjon mot gjødselbrukers fagsystemer, og tilbyr funksjonalitet for innsending av meldinger og søknader til Gjødselregisteret, samt mottak av forvaltningsrespons. 
