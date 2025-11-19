@@ -83,4 +83,4 @@ Endepunktet returnerer IDer på de nyopprettede stedfestene du trenger senere.
 Eksempelverdier ligger i spesifikasjonen (MeldingForespoerselDto og SlamMeldingDto)
 
 ## Bruk av testdata
-I dette prosjektet benyttes kun syntetisk testdata. Reelle eller personidentifiserbare data er det ikke ønskelig at skal sendes inn til testmiljøet av personvernhensyn. Syntetisk testdata kan genereres med verktøy som Tenor.
+I dette prosjektet benyttes kun syntetisk testdata. Reelle eller personidentifiserbare data skal ikke sendes inn til testmiljøet av personvernhensyn. Syntetisk testdata kan genereres med verktøy som Tenor.
