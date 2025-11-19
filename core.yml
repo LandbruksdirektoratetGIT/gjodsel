@@ -2,7 +2,10 @@ openapi: 3.0.0
 info:
   title: LDIR Gjødselregister API
   description: >-
-   Dette API-et eksponerer endepunkter for integrasjon mot gjødselbrukers fagsystemer, og tilbyr funksjonalitet for innsending av lovpålagte meldinger og søknader til Gjødselregisteret, samt mottak av forvaltningsrespons.
+    Dette API-et gir programmatisk tilgang til kjernevirksomhetsenheter og regulatoriske prosesser for forvaltning  
+    av bruk og rapportering av gjødsel i landbrukssektoren, slik det kreves av norske forskrifter.  
+    Det gjør det mulig for landbruksforetak, kommuner og tilsynsmyndigheter å registrere, oppdatere og hente ut data  
+    relatert til gjødselbruk, arealforvaltning, regulatoriske søknader og dokumentasjon av etterlevelse.
   version: 0.0.1
 servers:
   - url: 'https://gjoedsel-fagsystem-utv.non-prod.landbruksdirektoratet.no/api'
@@ -27,7 +30,7 @@ paths:
                 $ref: '#/components/schemas/VedleggListeResponsDto'
     post:
       summary: Last opp vedlegg
-      description: >- 
+      description: >-
         Last opp vedlegg til senere bruk i søknader, meldinger og kommentarer.
         MERK: Vedlegg som ikke knyttes til søknader, meldinger og kommentarer vil bli slettet etter 24 timer.
       operationId: lastOppVedlegg
@@ -92,7 +95,7 @@ paths:
                 format: binary
     delete:
       summary: Slett et vedlegg
-      description: >- 
+      description: >-
         Slett et tidligere opplastet vedlegg. Denne operasjonen vil feile som vedlegget er knyttet til en ressurs
         som ikke kan endres på (typisk søknader som er under behandling eller tilsvarende)
       operationId: slettEttVedlegg
@@ -703,7 +706,7 @@ components:
         errors:
           type: array
           items:
-           $ref: '#/components/schemas/ErrorDto'
+            $ref: '#/components/schemas/ErrorDto'
 
     PaginertResponsDto:
       allOf:
@@ -782,6 +785,7 @@ components:
         filType:
           type: string
           enum: [ PDF, JPEG, PNG, DOCX ]
+      required: [ tittel, vedleggType, filType ]
       example:
         tittel: Gammelt stedfesting
         vedleggType: KARTSKISSE
@@ -793,6 +797,7 @@ components:
         fil:
           type: string
           format: binary
+      required: [ fil ]
       example:
         tittel: Gammelt stedfesting
         vedleggType: KARTSKISSE
@@ -942,17 +947,25 @@ components:
       required: [ data ]
 
     # Meldinger
-    GjoedselBeskrivelseDto:
+    GjoedselMengdeDto:
       type: object
+      description: 'Dataobjekt for å oppgi mengde plantetilgjengelig fosfor og nitrogen i gjødselen som skal brukes'
       properties:
         mengdePlantetilgjengeligPKg:
           type: number
         mengdePlantetilgjengeligNKg:
           type: number
+      required: [ mengdePlantetilgjengeligPKg ]
+
+    GjoedselBeskrivelseDto:
+      type: object
+      allOf:
+        - $ref: '#/components/schemas/GjoedselMengdeDto'
+      properties:
         gjoedselTypeId:
           type: integer
           description: ID på gjødseltype som spesifisert på /gjoedseltyper
-      required: [ mengdePlantetilgjengeligFosforKg, gjoedselTypeId ]
+      required: [ gjoedselTypeId ]
 
     GjoedselOpphav:
       type: string
@@ -1016,7 +1029,7 @@ components:
           items:
             $ref: '#/components/schemas/GjoedseltypeResponsData'
       required: [ data ]
-      
+
     LedetekstResponsData:
       allOf:
         - $ref: '#/components/schemas/DataBasis'
@@ -1092,7 +1105,7 @@ components:
         behandlingsmaate:
           type: string
         gjoedsel:
-          $ref: '#/components/schemas/GjoedselBeskrivelseDto'
+          $ref: '#/components/schemas/GjoedselMengdeDto'
         jordproeveId:
           $ref: '#/components/schemas/jordproeveId'
         andreForhold:
@@ -1231,7 +1244,7 @@ components:
           items:
             $ref: '#/components/schemas/id'
       required: [ melding ]
-      
+
     MeldingResponsData:
       allOf:
         - $ref: '#/components/schemas/DataBasis'
@@ -1369,7 +1382,7 @@ components:
               $ref: '#/components/schemas/url'
           required: [ foretak, kommentarer ]
       required: [ attributes, links ]
-      
+
     SoeknadEnkelResponsDto:
       allOf:
         - $ref: '#/components/schemas/Respons'
@@ -1454,4 +1467,3 @@ components:
           items:
             $ref: '#/components/schemas/VedtakResponsData'
       required: [ data ]
-
