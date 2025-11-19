@@ -8,7 +8,7 @@ Det antas derfor at organisasjonen har sluttbrukere som er gjødselbrukere. Med 
 
 ## I dette repoet finner du:
 - **/dist:** Disse filene lar deg se den genererte dokumentasjonen for APIet til Gjødselregisterets kjernesystem.
-Besøk [GitHUB Pages](https://LandbruksdirektoratetGIT.github.io/gjodsel) for å se det i aksjon
+Besøk [GitHub Pages](https://landbruksdirektoratetgit.github.io/gjodsel/) for å se det i aksjon
 - **core.yml:** Kjernesystemet til Gjødselregisteret. Kjernesystemet lar deg blant annet sende inn meldinger og søknader om gjødselbruk.
 - **event-api.yml:** Kjernesystemet eksponerer hendelser når endringer skjer som er relevante for gjødselbrukerene det omhandler.
 Dette APIet inneholder API-spesifikasjonen på en websocket som gjør det mulig å abonnere på hendelser i Gjødselregisteret.
