@@ -2,7 +2,7 @@ openapi: 3.0.0
 info:
   title: LDIR Gjødselregister API
   description: >-
-    API-et eksponerer endepunkter for integrasjon mot gjødselbrukers fagsystemer, og tilbyr funksjonalitet for innsending av lovpålagte meldinger og søknader til Gjødselregisteret, samt mottak av forvaltningsrespons.
+   Dette API-et eksponerer endepunkter for integrasjon mot gjødselbrukers fagsystemer, og tilbyr funksjonalitet for innsending av lovpålagte meldinger og søknader til Gjødselregisteret, samt mottak av forvaltningsrespons.
   version: 0.0.1
 servers:
   - url: 'https://gjoedsel-fagsystem-utv.non-prod.landbruksdirektoratet.no/api'
