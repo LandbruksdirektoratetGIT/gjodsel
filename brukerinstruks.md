@@ -45,7 +45,7 @@ Claims:
 JSON-dokumentene base64-enkodes og punktum-konkateneres i henhold til [RFC-7519](https://datatracker.ietf.org/doc/html/rfc7519)
 Deretter må JWTen signeres i henhold til [RFC-7515](https://datatracker.ietf.org/doc/html/rfc7515).
 Det anbefales at et verktøy eller bibliotek benyttes til dette.
-Signeringsnøkkel for testmiljøet oppgis ved forespørsel til simen.slotta@landbruksdirektoratet.no
+Signeringsnøkkel for testmiljøet oppgis ved forespørsel til gjodsel@landbruksdirektoratet.no
 
 ### Første kall
 
