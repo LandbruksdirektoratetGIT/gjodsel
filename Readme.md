@@ -10,7 +10,7 @@ Du kan lese mer om prosjektet her: https://www.landbruksdirektoratet.no/nb/jordb
 API-et eksponerer endepunkter for integrasjon mot gjødselbrukers fagsystemer, og tilbyr funksjonalitet for innsending av lovpålagte meldinger og søknader til Gjødselregisteret, samt mottak av forvaltningsrespons.
 
 ## Samhandling om videreutvikling av API
-Vi inviterer eksterne systemvareleverandører til samarbeid om et felles API som forvaltes i dette GitHub-repositoriet. Du kan spørre om avklaringer og komme med innspill via Issues her i GitHub. Opprett én issue per tema, bruk labels (f.eks. proposal, question, bug), og referer til relevante spesifikasjoner/krav. Endringsforslag leveres som Pull Requests (PR) som refererer til en issue. PR-er skal beskrive motivasjon og konsekvenser for bakoverkompatibilitet.
+Vi inviterer eksterne systemvareleverandører til samarbeid om et felles API som forvaltes i dette GitHub-repositoriet. Du kan spørre om avklaringer og komme med innspill via Issues her i GitHub eller bruke Slack for avklaringer, prosjektet i denne første fasen ønsker å bruke Slack-kanalen som standard.  
 
 API-et er under aktiv utvikling og endringer nå i prosjektets førstefase vil forekomme hyppig. Vi etterstreber å dokumentere endringer fortløpende i API-spesifikasjonen og i forkant av utrulling av ny versjon. Utrulling av ny versjon vil varsles på prosjektets Slack-kanal (se info under). 
 ### Slack-kanal
