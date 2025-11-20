@@ -81,6 +81,9 @@ eller flere geografiske polygoner på forhånd. Disse kan (og bør) gjenbrukes t
 Endepunktet returnerer IDer på de nyopprettede stedfestene du trenger senere.
 - **POST /meldinger:** Nå kan melding om slam sendes inn. Husk å inkludere IDen til stedfestingen du sendte inn tidligere.
 Eksempelverdier ligger i spesifikasjonen (MeldingForespoerselDto og SlamMeldingDto)
+- Du skal nå motta en melding fra Event-APIet av typen MeldingEndretHendelse med status "INNSENDT" og endring "OPPRETTET".
+Event-APIet forventer at IDen på denne meldingen sendes tilbake på socketen med en melding av typen Erkjennelse. 
+Om dette ikke gjøres vil hendelsen periodevis bli sendt på nytt.
 
 ## Bruk av testdata
 I dette prosjektet benyttes kun syntetisk testdata. Reelle eller personidentifiserbare data skal ikke sendes inn til testmiljøet av personvernhensyn. Syntetisk testdata kan genereres med verktøy som Tenor.

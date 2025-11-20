@@ -2,9 +2,12 @@ openapi: 3.0.0
 info:
   title: LDIR Gjødselregister API
   description: >-
-    API-et eksponerer endepunkter for integrasjon mot gjødselbrukers fagsystemer,
+    Dette API-et eksponerer endepunkter for integrasjon mot gjødselbrukers fagsystemer,
     og tilbyr funksjonalitet for innsending av lovpålagte meldinger og søknader til Gjødselregisteret,
     samt mottak av forvaltningsrespons.
+
+
+    NB! APIet er i en veldig tidlig fase og kan endre seg uten forvarsel!
   version: 0.0.1
 servers:
   - url: 'https://gjoedsel-fagsystem-utv.non-prod.landbruksdirektoratet.no/api'
@@ -562,6 +565,7 @@ components:
       type: string
       format: uri
       description: En URL til en ressurs
+      example: https://gjoedsel-fagsystem-utv.non-prod.landbruksdirektoratet.no/api/......
     stedfestingId:
       type: integer
       description: ID til et stedfesting
@@ -575,12 +579,12 @@ components:
       description: Ett ISO-8601-formatert tidsstempel
     TidsintervallDto:
       type: object
+      description: DTO for et tidsintervall, typisk til bruk for å spesifisere en gyldighetsperiode for en annen DTO
       properties:
         fra:
           $ref: '#/components/schemas/tidspunkt'
         til:
           $ref: '#/components/schemas/tidspunkt'
-
 
     # JSON:API basics
     LenkerBasisDto:
@@ -664,6 +668,7 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/ResponsData'
+          example: []
 
     DataBasis:
       description: Objekt som representerer en enkelt entitet
@@ -734,9 +739,22 @@ components:
           $ref: '#/components/schemas/TidsintervallDto'
         areal:
           $ref: './geojson.yml#/components/schemas/GeometryElement'
-        arealType:
-          $ref: '#/components/schemas/ArealType'
-      required: [ gyldighet, areal, arealType ]
+      required: [ gyldighet, areal ]
+      example:
+        gyldighet:
+          fra: 2025-11-20T11:37:41Z
+        areal:
+          type: MultiPolygon
+          geometry:
+            type: point
+            coordinates:
+              [ [ [
+                [ 9.710581728419495,59.02571594994279 ],
+                [ 9.709294268092346,59.02493739117233 ],
+                [ 9.71144003530426,59.02457295335171 ],
+                [ 9.71369309087677,59.02493739117233 ],
+                [ 9.712802597483826,59.025633125379414 ],
+                [ 9.710581728419495,59.02571594994279 ] ] ] ]
     StedfesteResponsData:
       type: object
       allOf:
@@ -751,8 +769,33 @@ components:
             eiendomId:
               type: string
               format: uuid
-          required: [ opprettet, eiendomId ]
+            arealType:
+              $ref: '#/components/schemas/ArealType'
+          required: [ opprettet, eiendomId, arealType ]
       required: [ attributes ]
+      example:
+        id: 0
+        type: STEDFESTE
+        links:
+          self: https://gjoedsel-fagsystem-utv.non-prod.landbruksdirektoratet.no/api/stedfester/0
+        attributes:
+          gyldighet:
+            fra: 2025-11-20T11:37:41Z
+          areal:
+            type: MultiPolygon
+            geometry:
+              type: point
+              coordinates:
+                [ [ [
+                  [ 9.710581728419495,59.02571594994279 ],
+                  [ 9.709294268092346,59.02493739117233 ],
+                  [ 9.71144003530426,59.02457295335171 ],
+                  [ 9.71369309087677,59.02493739117233 ],
+                  [ 9.712802597483826,59.025633125379414 ],
+                  [ 9.710581728419495,59.02571594994279 ] ] ] ]
+          opprettet: 2025-11-20T11:37:41Z
+          eiendomId: 3fa85f64-5717-4562-b3fc-2c963f66afa6
+          arealType: FULLDYRKA_JORD
 
     StedfesteEnkelResponsDto:
       type: object
@@ -818,6 +861,16 @@ components:
               $ref: '#/components/schemas/url'
           required: [ fil ]
       required: [ attributes, links ]
+      example:
+        id: 0
+        type: VEDLEGG
+        links:
+          self: https://gjoedsel.landbruksdirektoratet.no/vedlegg/0
+          fil: https://gjoedsel.landbruksdirektoratet.no/vedlegg/0/fil
+        attributes:
+          tittel: Gammel stedfesting
+          vedleggType: KARTSKISSE
+          filType: JPEG
 
     VedleggEnkelResponsDto:
       allOf:
@@ -826,17 +879,6 @@ components:
         data:
           $ref: '#/components/schemas/VedleggResponsData'
       required: [ data ]
-      example:
-        data:
-          id: 0
-          type: VEDLEGG
-          links:
-            self: https://gjoedsel.landbruksdirektoratet.no/vedlegg/0
-            fil: https://gjoedsel.landbruksdirektoratet.no/vedlegg/0/fil
-          attributes:
-            tittel: Gammelt stedfesting
-            vedleggType: KARTSKISSE
-            filType: JPEG
 
     VedleggListeResponsDto:
       allOf:
@@ -900,7 +942,19 @@ components:
               $ref: '#/components/schemas/tidspunkt'
           required: [ forfatter, tidspunkt ]
       required: [ attributes ]
-
+      example:
+        id: 0
+        type: KOMMENTAR
+        attributes:
+          forfatter:
+            rolle: FORETAK
+            navn: Testgårdbruker
+          tidspunkt: 2025-10-06T07:39:59Z
+          tekst:  Gammelt stedfesting fra eiendomsregisteret vedlagt.
+        links:
+          self: https://gjoedsel.landbruksdirektoratet.no/meldinger/0/kommentarer/0
+          vedlegg: https://gjoedsel.landbruksdirektoratet.no/meldinger/0/kommentarer/0?include=vedlegg
+          stedfester: https://gjoedsel.landbruksdirektoratet.no/meldinger/0/kommentarer/0?include=stedfester
 
     KommentarEnkelResponsDto:
       allOf:
@@ -909,31 +963,6 @@ components:
         data:
           $ref: '#/components/schemas/KommentarResponsData'
       required: [ data ]
-      example:
-        data:
-          id: 0
-          type: KOMMENTAR
-          attributes:
-            forfatter:
-              rolle: KOMMUNE
-              navn: Saksbehandler Ståle
-            tidspunkt: 2025-10-06T07:39:59.742Z
-            tekst: Vennligst korriger stedfesting så spredeareal er mer enn 25 meter unna Glommas bredder
-          links:
-            self: https://gjoedsel.landbruksdirektoratet.no/meldinger/0/kommentarer/0
-          relationships:
-            vedlegg:
-              data:
-                - links:
-                    self: https://gjoedsel.landbruksdirektoratet.no/vedlegg/0
-                  id: 0
-                  type: VEDLEGG
-            stedfeste:
-              data:
-                - links:
-                    self: https://gjoedsel.landbruksdirektoratet.no/stedfester/0
-                  id: 0
-                  type: STEDFESTE
 
     KommentarListeResponsDto:
       allOf:
@@ -997,6 +1026,16 @@ components:
           allOf:
             - $ref: '#/components/schemas/Gjoedseltype'
       required: [ attributes ]
+      example:
+        id: 0
+        type: GJOEDSELTYPE
+        attributes:
+          beskrivelse: Ammekyr
+          opphav: STORFE
+          kategori: ORGANISK
+          kgPPerIndivid: 8
+          kgNPerIndivid: 66
+          faktorForNH3Tap: 0.14
 
     GjoedseltypeEnkelResponsDto:
       allOf:
@@ -1005,19 +1044,6 @@ components:
         data:
           $ref: '#/components/schemas/GjoedseltypeResponsData'
       required: [ data ]
-      example:
-        data:
-          id: 0
-          type: GJOEDSELTYPE
-          attributes:
-            beskrivelse: Ammekyr
-            opphav: STORFE
-            kategori: ORGANISK
-            kgPPerIndivid: 8
-            kgNPerIndivid: 66
-            faktorForNH3Tap: 0.14
-          links:
-            self: http://gjoedsel.landbruksdirektoratet.no/gjoedseltyper/0
 
     GjoedseltypeListeResponsDto:
       allOf:
@@ -1046,6 +1072,13 @@ components:
               description: Lengre beskrivelse av feltet
           required: [ navn, tittel, beskrivelse ]
       required: [ attributes ]
+      example:
+        id: 0
+        type: LEDETEKST
+        attributes:
+          navn: SlamMelding.spredetidspunkt
+          tittel: Tidspunkt for slamspredning
+          beskrivelse: Faktisk tidspunkt når slammet skal spres. Merk at dette tidspunktet må være *minst* 14 dager fra nå.
 
     LedetekstEnkelResponsDto:
       allOf:
@@ -1055,13 +1088,6 @@ components:
           $ref: '#/components/schemas/LedetekstResponsData'
       required: [ data ]
       example:
-        data:
-          id: 0
-          type: LEDETEKST
-          attributes:
-            navn: SlamMelding.spredetidspunkt
-            tittel: Tidspunkt for slamspredning
-            beskrivelse: Faktisk tidspunkt når slammet skal spres. Merk at dette tidspunktet må være *minst* 14 dager fra nå.
 
     LedetekstListeResponsDto:
       allOf:
@@ -1243,6 +1269,18 @@ components:
           items:
             $ref: '#/components/schemas/id'
       required: [ melding ]
+      example:
+        melding:
+          type: BRUK_AV_SLAM
+          spredetidspunkt: 2025-11-20T11:37:41Z
+          behandlingsmaate: Høytemperaturhygienisert
+          gjoedsel:
+            mengdePlantetilgjengeligPKg: 200
+            mengdePlantetilgjengeligNKg: 2000
+          jordproeveId: 3fa85f64-5717-4562-b3fc-2c963f66afa6
+          andreForhold: Nedmoldes senest 8 timer etter spredning
+        stedfester: [1, 2, 3]
+        vedlegg: [1, 2]
 
     MeldingResponsData:
       allOf:
@@ -1271,6 +1309,27 @@ components:
               $ref: '#/components/schemas/url'
           required: [ foretak, kommentarer ]
       required: [ attributes, links ]
+      example:
+        id: 0
+        type: MELDING
+        attributes:
+          innsendt: 2025-11-20T11:37:41Z
+          status: INNSENDT
+          melding:
+            type: BRUK_AV_SLAM
+            spredetidspunkt: 2025-11-20T11:37:41Z
+            behandlingsmaate: Høytemperaturhygienisert
+            gjoedsel:
+              mengdePlantetilgjengeligPKg: 200
+              mengdePlantetilgjengeligNKg: 2000
+            jordproeveId: 3fa85f64-5717-4562-b3fc-2c963f66afa6
+            andreForhold: Nedmoldes senest 8 timer etter spredning
+        links:
+          self: https://gjoedsel-fagsystem-utv.non-prod.landbruksdirektoratet.no/api/meldinger/0
+          jordproeve: https:/jordproeveregisteret.no/api/jordproeve/3fa85f64-5717-4562-b3fc-2c963f66afa6
+          gjoedselType: https://gjoedsel-fagsystem-utv.non-prod.landbruksdirektoratet.no/api/gjoedseltyper/0
+          foretak: https://gjoedsel-fagsystem-utv.non-prod.landbruksdirektoratet.no/api/foretak/0
+          kommentarer: https://gjoedsel-fagsystem-utv.non-prod.landbruksdirektoratet.no/api/meldinger/0/kommentarer
 
     MeldingEnkelResponsDto:
       allOf:
@@ -1330,6 +1389,11 @@ components:
           items:
             $ref: '#/components/schemas/id'
       required: [ soeknad ]
+      example:
+        soeknad:
+          type: INNMARKSBEITE_SOM_SPREDEAREAL
+        stedfester: [1, 2, 3]
+        vedlegg: [1, 2]
 
     SoeknadBaseDto:
       type: object
@@ -1381,6 +1445,20 @@ components:
               $ref: '#/components/schemas/url'
           required: [ foretak, kommentarer ]
       required: [ attributes, links ]
+      example:
+        id: 0
+        type: SOEKNAD
+        attributes:
+          opprettet: 2025-11-20T11:37:41Z
+          status: MOTTATT
+          soeknad:
+            type: INNMARKSBEITE_SOM_SPREDEAREAL
+        links:
+          self: https://gjoedsel-fagsystem-utv.non-prod.landbruksdirektoratet.no/api/soeknader/0
+          vedtak: https://gjoedsel-fagsystem-utv.non-prod.landbruksdirektoratet.no/api/vedtak/0
+          jordproeve: https:/jordproeveregisteret.no/api/jordproeve/3fa85f64-5717-4562-b3fc-2c963f66afa6
+          foretak: https://gjoedsel-fagsystem-utv.non-prod.landbruksdirektoratet.no/api/foretak/0
+          kommentarer: https://gjoedsel-fagsystem-utv.non-prod.landbruksdirektoratet.no/api/meldinger/0/kommentarer
 
     SoeknadEnkelResponsDto:
       allOf:
@@ -1448,6 +1526,22 @@ components:
               $ref: '#/components/schemas/url'
           required: [ foretak ]
       required: [ attributes, links ]
+      example:
+        id: 0
+        type: VEDTAK
+        attributes:
+          status: VEDTATT
+          gyldighetsperiode:
+            fra: 2025-11-20T11:37:41Z
+          begrunnelse: Søknad om spredning av organisk gjødsel på innmarksbeite godtatt uten forbehold
+          rettsligGrunnlag: Jf. gjødselforskriften §20
+          fattetAv:
+            behandlendeEnhet: Rogaland fylkeskommune
+            saksbehandler: Petter
+            godkjenner: Ikke Petter
+        links:
+          soeknad: https://gjoedsel-fagsystem-utv.non-prod.landbruksdirektoratet.no/api/soeknad/0
+          foretak: https://gjoedsel-fagsystem-utv.non-prod.landbruksdirektoratet.no/api/foretak/0
 
     VedtakEnkelResponsDto:
       allOf:
