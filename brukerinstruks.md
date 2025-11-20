@@ -2,7 +2,7 @@
 
 Denne veilederen er for organisasjoner som skal utvikle en integrasjon mot Landbruksdirektoratets Gjødselregister.
 Det antas derfor at organisasjonen har sluttbrukere som er gjødselbrukere. Med det menes for eksempel:
-- Landbruksforetak som bruker organisk gjødsel
+- Landbruksforetak
 - Parkanlegg
 - Golfbaner
 
