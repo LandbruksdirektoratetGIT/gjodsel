@@ -14,4 +14,4 @@ Vi inviterer eksterne systemvareleverandører til samarbeid om et felles API som
 
 API-et er under aktiv utvikling og endringer nå i prosjektets førstefase vil forekomme hyppig. Vi etterstreber å dokumentere endringer fortløpende i API-spesifikasjonen og i forkant av utrulling av ny versjon. Utrulling av ny versjon vil varsles på prosjektets Slack-kanal (se info under). 
 ### Slack-kanal
-Prosjektet har opprettet en Slack-kanal. Kanalen er avgrenset til systemleverandører som aktivt bidrar inn i arbeidet ved å benytte API-et for integrasjon mot sine respektive sluttbrukersystem. Ta kontakt med simen.slotta@landbruksdirektoratet.no hvis du ønsker tilgang. 
+Prosjektet har opprettet en Slack-kanal. Kanalen er avgrenset til systemleverandører som aktivt bidrar inn i arbeidet ved å benytte API-et for integrasjon mot sine respektive sluttbrukersystem. Ta kontakt med oss på gjodsel@landbruksdirektoratet.no hvis du ønsker tilgang. 
