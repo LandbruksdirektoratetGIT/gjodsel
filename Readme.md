@@ -1,5 +1,5 @@
-# Landbruksdirektoratets Gjødselsregister-API
-API for systemvareleverandører som skal integrere seg mot Landbruksdirektoratets Gjødselsregister.
+# Landbruksdirektoratets Gjødselregister-API
+API for systemvareleverandører som skal integrere seg mot Landbruksdirektoratets Gjødselregister.
 API-et er under aktiv utvikling og endringer nå i prosjektets førstefase vil forekomme hyppig. Vi etterstreber å dokumentere endringer fortløpende i API-spesifikasjonen og i forkant av utrulling av ny versjon. Utrulling av ny versjon vil varsles på prosjektets Slack-kanal (se info under).
 
 ## Om Gjødselregisteret
