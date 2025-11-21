@@ -9,6 +9,9 @@ Du kan lese mer om prosjektet her: https://www.landbruksdirektoratet.no/nb/jordb
 # API beskrivelse
 API-et eksponerer endepunkter for integrasjon mot gjødselbrukers fagsystemer, og tilbyr funksjonalitet for innsending av lovpålagte meldinger og søknader til Gjødselregisteret, samt mottak av forvaltningsrespons.
 
+## Signeringsnøkkel
+For å få benyttet API-et må du ha en signeringsnøkkel, denne ligger i Slack-kanalen eller du kan be om å få den tilsendt per epost ved å sende en henvendelse til gjodsel@landbruksdirektoratet.no.
+
 ## Samhandling om videreutvikling av API
 Vi inviterer eksterne systemvareleverandører til samarbeid om et felles API som forvaltes i dette GitHub-repositoriet. Du kan spørre om avklaringer og komme med innspill via Issues her i GitHub eller bruke Slack for avklaringer, prosjektet i denne første fasen ønsker å bruke Slack-kanalen som standard.  
 
