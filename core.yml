@@ -128,6 +128,7 @@ paths:
         - $ref: '#/components/parameters/limitParam'
         - $ref: '#/components/parameters/offsetParam'
         - $ref: '#/components/parameters/sortParam'
+        - $ref: '#/components/parameters/includeParam'
       responses:
         200:
           description: Liste over kjente stedfester relevante for dette landbruksforetaket
@@ -622,20 +623,16 @@ components:
 
     ResponsData:
       type: object
+      allOf:
+        - $ref: '#/components/schemas/RessursIdentifikator'
       properties:
         id:
           $ref: '#/components/schemas/id'
         type:
           $ref: '#/components/schemas/ResponsType'
+        relationships:
+          $ref: '#/components/schemas/Relationships'
       required: [ id, type ]
-      oneOf:
-        - $ref: '#/components/schemas/StedfesteResponsData'
-        - $ref: '#/components/schemas/VedleggResponsData'
-        - $ref: '#/components/schemas/KommentarResponsData'
-        - $ref: '#/components/schemas/GjoedseltypeResponsData'
-        - $ref: '#/components/schemas/MeldingResponsData'
-        - $ref: '#/components/schemas/SoeknadResponsData'
-        - $ref: '#/components/schemas/VedtakResponsData'
       discriminator:
         propertyName: type
         mapping:
@@ -670,15 +667,29 @@ components:
             $ref: '#/components/schemas/ResponsData'
           example: []
 
+    Relationships:
+      type: object
+      description: >-
+        Pekere til andre assosierte ressurser. Blir typisk med når dataobjektet er inkludert i en større respons
+        for å preservere relasjonen
+      additionalProperties:
+        type: object
+        properties:
+          data:
+            type: array
+            items:
+              $ref: '#/components/schemas/RessursIdentifikator'
+
     DataBasis:
       description: Objekt som representerer en enkelt entitet
       type: object
       allOf:
         - $ref: '#/components/schemas/RessursIdentifikator'
       properties:
+        relationships:
+          $ref: '#/components/schemas/Relationships'
         links:
-          allOf:
-            - $ref: '#/components/schemas/LenkerBasisDto'
+          $ref: '#/components/schemas/LenkerBasisDto'
 
     ErrorDto:
       type: object
@@ -745,18 +756,20 @@ components:
           fra: 2025-11-20T11:37:41Z
         areal:
           type: MultiPolygon
-          coordinates:
-            [ [ [
-              [ 9.710581728419495,59.02571594994279 ],
-              [ 9.709294268092346,59.02493739117233 ],
-              [ 9.71144003530426,59.02457295335171 ],
-              [ 9.71369309087677,59.02493739117233 ],
-              [ 9.712802597483826,59.025633125379414 ],
-              [ 9.710581728419495,59.02571594994279 ] ] ] ]
+          geometry:
+            type: point
+            coordinates:
+              [ [ [
+                [ 9.710581728419495,59.02571594994279 ],
+                [ 9.709294268092346,59.02493739117233 ],
+                [ 9.71144003530426,59.02457295335171 ],
+                [ 9.71369309087677,59.02493739117233 ],
+                [ 9.712802597483826,59.025633125379414 ],
+                [ 9.710581728419495,59.02571594994279 ] ] ] ]
     StedfesteResponsData:
       type: object
       allOf:
-        - $ref: '#/components/schemas/DataBasis'
+        - $ref: '#/components/schemas/ResponsData'
       properties:
         attributes:
           allOf:
@@ -770,6 +783,8 @@ components:
             arealType:
               $ref: '#/components/schemas/ArealType'
           required: [ opprettet, eiendomId, arealType ]
+        links:
+          $ref: '#/components/schemas/LenkerBasisDto'
       required: [ attributes ]
       example:
         id: 0
@@ -781,14 +796,16 @@ components:
             fra: 2025-11-20T11:37:41Z
           areal:
             type: MultiPolygon
-            coordinates:
-              [ [ [
-                [ 9.710581728419495,59.02571594994279 ],
-                [ 9.709294268092346,59.02493739117233 ],
-                [ 9.71144003530426,59.02457295335171 ],
-                [ 9.71369309087677,59.02493739117233 ],
-                [ 9.712802597483826,59.025633125379414 ],
-                [ 9.710581728419495,59.02571594994279 ] ] ] ]
+            geometry:
+              type: point
+              coordinates:
+                [ [ [
+                  [ 9.710581728419495,59.02571594994279 ],
+                  [ 9.709294268092346,59.02493739117233 ],
+                  [ 9.71144003530426,59.02457295335171 ],
+                  [ 9.71369309087677,59.02493739117233 ],
+                  [ 9.712802597483826,59.025633125379414 ],
+                  [ 9.710581728419495,59.02571594994279 ] ] ] ]
           opprettet: 2025-11-20T11:37:41Z
           eiendomId: 3fa85f64-5717-4562-b3fc-2c963f66afa6
           arealType: FULLDYRKA_JORD
@@ -844,7 +861,7 @@ components:
 
     VedleggResponsData:
       allOf:
-        - $ref: '#/components/schemas/DataBasis'
+        - $ref: '#/components/schemas/ResponsData'
       properties:
         attributes:
           allOf:
@@ -926,7 +943,7 @@ components:
 
     KommentarResponsData:
       allOf:
-        - $ref: '#/components/schemas/DataBasis'
+        - $ref: '#/components/schemas/ResponsData'
       properties:
         attributes:
           allOf:
@@ -937,6 +954,8 @@ components:
             tidspunkt:
               $ref: '#/components/schemas/tidspunkt'
           required: [ forfatter, tidspunkt ]
+        links:
+          $ref: '#/components/schemas/LenkerBasisDto'
       required: [ attributes ]
       example:
         id: 0
@@ -1016,11 +1035,13 @@ components:
 
     GjoedseltypeResponsData:
       allOf:
-        - $ref: '#/components/schemas/DataBasis'
+        - $ref: '#/components/schemas/ResponsData'
       properties:
         attributes:
           allOf:
             - $ref: '#/components/schemas/Gjoedseltype'
+        links:
+          $ref: '#/components/schemas/LenkerBasisDto'
       required: [ attributes ]
       example:
         id: 0
@@ -1053,7 +1074,7 @@ components:
 
     LedetekstResponsData:
       allOf:
-        - $ref: '#/components/schemas/DataBasis'
+        - $ref: '#/components/schemas/ResponsData'
       properties:
         attributes:
           properties:
@@ -1108,18 +1129,12 @@ components:
     MeldingsStatus:
       type: string
       description: Mulige gyldige tilstander på en melding
-      enum: [ INNSENDT, AKSEPTERT, AVVIST ]
+      enum: [ INNSENDT, MOTTATT, AKSEPTERT, AVVIST ]
 
-    MeldingBaseDto:
-      type: object
-      properties:
-        type:
-          $ref: '#/components/schemas/MeldingsType'
-      required: [ type ]
     SlamMeldingDto:
       description: Melding om bruk av slam
       allOf:
-        - $ref: '#/components/schemas/MeldingBaseDto'
+        - $ref: '#/components/schemas/MeldingDto'
       properties:
         spredetidspunkt:
           $ref: '#/components/schemas/tidspunkt'
@@ -1137,7 +1152,7 @@ components:
         Melding om at foretaket igangsetter en treårsperiode med balansegjødsling som tilsidesetter ordinære
         gjødslingsgrenser.
       allOf:
-        - $ref: '#/components/schemas/MeldingBaseDto'
+        - $ref: '#/components/schemas/MeldingDto'
       properties:
         jordproeveId:
           $ref: '#/components/schemas/jordproeveId'
@@ -1162,7 +1177,7 @@ components:
       description: >-
         Innsending av gjødselsplan for en vekstsesong
       allOf:
-        - $ref: '#/components/schemas/MeldingBaseDto'
+        - $ref: '#/components/schemas/MeldingDto'
       properties:
         vekstsesong:
           $ref: '#/components/schemas/TidsintervallDto'
@@ -1187,7 +1202,7 @@ components:
       description: >-
         Innsending av gjødselsjournal for en vekstsesong
       allOf:
-        - $ref: '#/components/schemas/MeldingBaseDto'
+        - $ref: '#/components/schemas/MeldingDto'
       properties:
         vekstsesong:
           $ref: '#/components/schemas/TidsintervallDto'
@@ -1200,7 +1215,7 @@ components:
       description: >-
         Melding fra bortskaffer om gjødsel som skal bortskaffes
       allOf:
-        - $ref: '#/components/schemas/MeldingBaseDto'
+        - $ref: '#/components/schemas/MeldingDto'
       properties:
         leveransetid:
           $ref: '#/components/schemas/tidspunkt'
@@ -1216,7 +1231,7 @@ components:
         Melding om et areal på landbrukseiendommen som skal benyttes til fosforkrevende vekster og som derfor skal
         gjødsles utover gjeldende grenser.
       allOf:
-        - $ref: '#/components/schemas/MeldingBaseDto'
+        - $ref: '#/components/schemas/MeldingDto'
       properties:
         avlingstype:
           type: string
@@ -1234,13 +1249,6 @@ components:
         type:
           $ref: '#/components/schemas/MeldingsType'
       required: [ type ]
-      oneOf:
-        - $ref: '#/components/schemas/SlamMeldingDto'
-        - $ref: '#/components/schemas/BalansegjoedslingMeldingDto'
-        - $ref: '#/components/schemas/GjoedselsplanMeldingDto'
-        - $ref: '#/components/schemas/GjoedselsjournalMeldingDto'
-        - $ref: '#/components/schemas/BortskaffingsMeldingDto'
-        - $ref: '#/components/schemas/FosforkrevendeVeksterMeldingDto'
       discriminator:
         propertyName: type
         mapping:
@@ -1280,7 +1288,7 @@ components:
 
     MeldingResponsData:
       allOf:
-        - $ref: '#/components/schemas/DataBasis'
+        - $ref: '#/components/schemas/ResponsData'
       properties:
         attributes:
           properties:
@@ -1353,15 +1361,12 @@ components:
       enum: [ INNMARKSBEITE_SOM_SPREDEAREAL, GJOEDSLING_OVER_GRENSEVERDIER ]
     SoeknadsStatus:
       description: Mulige tilstander til en søknad
-      enum: [ MOTTATT, UNDER_BEHANDLING, TILBAKESENDT, BEHANDLET ]
+      enum: [ INNSENDT, MOTTATT, UNDER_BEHANDLING, TILBAKESENDT, BEHANDLET ]
 
     SoeknadDto:
       description: >-
         Søknader er henvendelser fra foretaket om ønskede endringer som krever godkjenning og til slutt vedtak fra
         forvaltningen for at foretaket skal kunne gjennomføre endringene.
-      oneOf:
-        - $ref: '#/components/schemas/InnmarksbeiteSomSpredearealSoeknadDto'
-        - $ref: '#/components/schemas/GjoedslingOverGrenseverdiSoeknadDto'
       properties:
         type:
           $ref: '#/components/schemas/SoeknadsType'
@@ -1371,6 +1376,7 @@ components:
         mapping:
           INNMARKSBEITE_SOM_SPREDEAREAL: '#/components/schemas/InnmarksbeiteSomSpredearealSoeknadDto'
           GJOEDSLING_OVER_GRENSEVERDIER: '#/components/schemas/GjoedslingOverGrenseverdiSoeknadDto'
+
     SoeknadForespoerselDto:
       description: Inndata for en ny søknad
       properties:
@@ -1391,22 +1397,15 @@ components:
         stedfester: [1, 2, 3]
         vedlegg: [1, 2]
 
-    SoeknadBaseDto:
-      type: object
-      properties:
-        type:
-          $ref: '#/components/schemas/SoeknadsType'
-      required: [ type ]
-
     InnmarksbeiteSomSpredearealSoeknadDto:
       description: Søknad som gjelder innmarksbeite som spredeareal
       allOf:
-        - $ref: '#/components/schemas/SoeknadBaseDto'
+        - $ref: '#/components/schemas/SoeknadDto'
 
     GjoedslingOverGrenseverdiSoeknadDto:
       description: Søknad som gjelder gjødsling over grenseverdier
       allOf:
-        - $ref: '#/components/schemas/SoeknadBaseDto'
+        - $ref: '#/components/schemas/SoeknadDto'
       properties:
         jordproeveId:
           $ref: '#/components/schemas/jordproeveId'
@@ -1416,7 +1415,7 @@ components:
 
     SoeknadResponsData:
       allOf:
-        - $ref: '#/components/schemas/DataBasis'
+        - $ref: '#/components/schemas/ResponsData'
       properties:
         attributes:
           properties:
@@ -1507,7 +1506,7 @@ components:
 
     VedtakResponsData:
       allOf:
-        - $ref: '#/components/schemas/DataBasis'
+        - $ref: '#/components/schemas/ResponsData'
       properties:
         attributes:
           allOf:
