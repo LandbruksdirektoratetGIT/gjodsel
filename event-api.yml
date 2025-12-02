@@ -24,7 +24,7 @@ defaultContentType: application/json
 
 servers:
   prod:
-    url: 'https://event-api-utv.non-prod.landbruksdirektoratet.no/api'
+    url: 'https://gjoedsel-event-api-utv.non-prod.landbruksdirektoratet.no/api'
     protocol: wss
     description: >-
       WebSocket-endepunkt for mottak av LDIR-hendelser. Tilkoblingen er scopet til foretaket
