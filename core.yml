@@ -74,6 +74,18 @@ paths:
             application/vnd.api+json:
               schema:
                 $ref: '#/components/schemas/VedleggEnkelResponsDto'
+    delete:
+      summary: Slett et vedlegg
+      description: >-
+        Slett et tidligere opplastet vedlegg. Denne operasjonen vil feile som vedlegget er knyttet til en ressurs
+        som ikke kan endres på (typisk søknader som er under behandling eller tilsvarende)
+      operationId: slettEttVedlegg
+      tags: [ vedlegg ]
+      responses:
+        204:
+          description: Vedlegget er slettet
+        400:
+          $ref: '#/components/responses/BadRequest'
   /vedlegg/{vedleggId}/fil:
     parameters:
       - name: vedleggId
@@ -95,18 +107,6 @@ paths:
               schema:
                 type: string
                 format: binary
-    delete:
-      summary: Slett et vedlegg
-      description: >-
-        Slett et tidligere opplastet vedlegg. Denne operasjonen vil feile som vedlegget er knyttet til en ressurs
-        som ikke kan endres på (typisk søknader som er under behandling eller tilsvarende)
-      operationId: slettEttVedlegg
-      tags: [ vedlegg ]
-      responses:
-        204:
-          description: Vedlegget er slettet
-        400:
-          $ref: '#/components/responses/BadRequest'
 
   /stedfester:
     get:

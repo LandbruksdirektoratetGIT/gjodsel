@@ -33,7 +33,7 @@ servers:
       - bearerAuth: []
 
 channels:
-  /gjoedsel:
+  /ws/events:
     subscribe:
       operationId: mottaHendelser
       summary: Motta hendelser om endringer i gjødselressurser
