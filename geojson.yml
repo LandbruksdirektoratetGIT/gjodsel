@@ -1,4 +1,4 @@
-openapi: 3.0.0
+openapi: 3.1.0
 info:
   version: 1.0.1
   title: GeoJSON format
@@ -73,17 +73,17 @@ components:
         - Polygon
         - MultiPolygon
 
-    'Geometry':
-      description: >
-        Abstract type for all GeoJSon object except Feature and
-        FeatureCollection
-      properties:
-        type:
-          $ref: '#/components/schemas/GeometryType'
-      externalDocs:
-        url: 'https://tools.ietf.org/html/rfc7946#section-3'
-      allOf:
-        - $ref: '#/components/schemas/GeoJsonObject'
+    #'Geometry':
+    #  description: >
+    #    Abstract type for all GeoJSon object except Feature and
+    #    FeatureCollection
+    #  properties:
+    #    type:
+    #      $ref: '#/components/schemas/GeometryType'
+    #  externalDocs:
+    #    url: 'https://tools.ietf.org/html/rfc7946#section-3'
+    #  allOf:
+    #    - $ref: '#/components/schemas/GeoJsonObject'
 
     #---------------------------------------------------------------------------
     'GeometryElement':
@@ -92,18 +92,13 @@ components:
         'GeometryCollection'
       externalDocs:
         url: 'https://tools.ietf.org/html/rfc7946#section-3'
+      allOf:
+        - $ref: '#/components/schemas/GeoJsonObject'
       properties:
         type:
           $ref: '#/components/schemas/GeometryType'
       required:
         - type
-      oneOf:
-        - $ref: '#/components/schemas/Point'
-        - $ref: '#/components/schemas/MultiPoint'
-        - $ref: '#/components/schemas/LineString'
-        - $ref: '#/components/schemas/MultiLineString'
-        - $ref: '#/components/schemas/Polygon'
-        - $ref: '#/components/schemas/MultiPolygon'
       discriminator:
         propertyName: type
         mapping:
@@ -121,22 +116,21 @@ components:
         url: 'https://tools.ietf.org/html/rfc7946#section-3.2'
       allOf:
         - $ref: '#/components/schemas/GeoJsonObject'
-        - type: object
-          required:
-            - geometry
-            - properties
-          properties:
-            'geometry':
-              allOf:
-                - nullable: true
-                - $ref: '#/components/schemas/Geometry'
-            'properties':
-              type: object
-              nullable: true
-            'id':
-              oneOf:
-                - type: number
-                - type: string
+      properties:
+        'geometry':
+          allOf:
+            - nullable: true
+            - $ref: '#/components/schemas/GeometryElement'
+        'properties':
+          type: object
+          nullable: true
+        'id':
+          oneOf:
+            - type: number
+            - type: string
+      required:
+        - geometry
+        - properties
 
     #---------------------------------------------------------------------------
     'FeatureCollection':
@@ -145,14 +139,13 @@ components:
         url: 'https://tools.ietf.org/html/rfc7946#section-3.3'
       allOf:
         - $ref: '#/components/schemas/GeoJsonObject'
-        - type: object
-          required:
-            - features
-          properties:
-            'features':
-              type: array
-              items:
-                $ref: '#/components/schemas/Feature'
+      properties:
+        'features':
+          type: array
+          items:
+            $ref: '#/components/schemas/Feature'
+      required:
+        - features
 
     #---------------------------------------------------------------------------
     'Position':
@@ -218,13 +211,12 @@ components:
       externalDocs:
         url: 'https://tools.ietf.org/html/rfc7946#section-3.1.2'
       allOf:
-        - $ref: '#/components/schemas/Geometry'
-        - type: object
-          required:
-            - coordinates
-          properties:
-            'coordinates':
-              $ref: '#/components/schemas/Position'
+        - $ref: '#/components/schemas/GeometryElement'
+      properties:
+        'coordinates':
+          $ref: '#/components/schemas/Position'
+      required:
+        - coordinates
 
     #---------------------------------------------------------------------------
     'MultiPoint':
@@ -232,15 +224,14 @@ components:
       externalDocs:
         url: 'https://tools.ietf.org/html/rfc7946#section-3.1.3'
       allOf:
-        - $ref: '#/components/schemas/Geometry'
-        - type: object
-          required:
-            - coordinates
-          properties:
-            'coordinates':
-              type: array
-              items:
-                $ref: '#/components/schemas/Position'
+        - $ref: '#/components/schemas/GeometryElement'
+      properties:
+        'coordinates':
+          type: array
+          items:
+            $ref: '#/components/schemas/Position'
+      required:
+        - coordinates
 
     #---------------------------------------------------------------------------
     'LineString':
@@ -248,13 +239,12 @@ components:
       externalDocs:
         url: 'https://tools.ietf.org/html/rfc7946#section-3.1.4'
       allOf:
-        - $ref: '#/components/schemas/Geometry'
-        - type: object
-          required:
-            - coordinates
-          properties:
-            'coordinates':
-              $ref: '#/components/schemas/LineStringCoordinates'
+        - $ref: '#/components/schemas/GeometryElement'
+      properties:
+        'coordinates':
+          $ref: '#/components/schemas/LineStringCoordinates'
+      required:
+        - coordinates
 
     #---------------------------------------------------------------------------
     'MultiLineString':
@@ -262,15 +252,14 @@ components:
       externalDocs:
         url: 'https://tools.ietf.org/html/rfc7946#section-3.1.5'
       allOf:
-        - $ref: '#/components/schemas/Geometry'
-        - type: object
-          required:
-            - coordinates
-          properties:
-            'coordinates':
-              type: array
-              items:
-                $ref: '#/components/schemas/LineStringCoordinates'
+        - $ref: '#/components/schemas/GeometryElement'
+      properties:
+        'coordinates':
+          type: array
+          items:
+            $ref: '#/components/schemas/LineStringCoordinates'
+      required:
+        - coordinates
 
     #---------------------------------------------------------------------------
     'Polygon':
@@ -278,15 +267,14 @@ components:
       externalDocs:
         url: 'https://tools.ietf.org/html/rfc7946#section-3.1.6'
       allOf:
-        - $ref: '#/components/schemas/Geometry'
-        - type: object
-          required:
-            - coordinates
-          properties:
-            'coordinates':
-              type: array
-              items:
-                $ref: '#/components/schemas/LinearRing'
+        - $ref: '#/components/schemas/GeometryElement'
+      properties:
+        'coordinates':
+          type: array
+          items:
+            $ref: '#/components/schemas/LinearRing'
+      required:
+        - coordinates
 
     #---------------------------------------------------------------------------
     'MultiPolygon':
@@ -294,17 +282,16 @@ components:
       externalDocs:
         url: 'https://tools.ietf.org/html/rfc7946#section-3.1.7'
       allOf:
-        - $ref: '#/components/schemas/Geometry'
-        - type: object
-          required:
-            - coordinates
-          properties:
-            'coordinates':
-              type: array
-              items:
-                type: array
-                items:
-                  $ref: '#/components/schemas/LinearRing'
+        - $ref: '#/components/schemas/GeometryElement'
+      properties:
+        'coordinates':
+          type: array
+          items:
+            type: array
+            items:
+              $ref: '#/components/schemas/LinearRing'
+      required:
+        - coordinates
 
     #---------------------------------------------------------------------------
     'GeometryCollection':
@@ -319,13 +306,12 @@ components:
       externalDocs:
         url: 'https://tools.ietf.org/html/rfc7946#section-3.1.8'
       allOf:
-        - $ref: '#/components/schemas/Geometry'
-        - type: object
-          required:
-            - geometries
-          properties:
-            'geometries':
-              type: array
-              items:
-                $ref: '#/components/schemas/GeometryElement'
-              minItems: 0
+        - $ref: '#/components/schemas/GeometryElement'
+      properties:
+        'geometries':
+          type: array
+          items:
+            $ref: '#/components/schemas/GeometryElement'
+          minItems: 0
+      required:
+        - geometries

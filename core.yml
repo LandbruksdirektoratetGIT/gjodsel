@@ -1,4 +1,4 @@
-openapi: 3.0.0
+openapi: 3.1.0
 info:
   title: LDIR Gjødselregister API
   description: >-
@@ -740,21 +740,22 @@ components:
           type: string
       required: [ id, type, orgNummer, orgNavn ]
     ArealType:
+      description: Type areal stedfestet primært inneholder
       type: string
       enum: [ FULLDYRKA_JORD, OVERFLATEDYRKA_JORD, INNMARKSBEITE ]
     StedfesteDto:
       type: object
-      description: Ett stedfeste er et kartfestet areal tilhørende en eiendom
+      description: Ett stedfeste er en kartfestet geometri tilhørende en eiendom
       properties:
         gyldighet:
           $ref: '#/components/schemas/TidsintervallDto'
-        areal:
-          $ref: './geojson.yml#/components/schemas/GeometryElement'
-      required: [ gyldighet, areal ]
+        geom:
+          $ref: 'geojson.yml#/components/schemas/GeometryElement'
+      required: [ gyldighet, geom ]
       example:
         gyldighet:
           fra: 2025-11-20T11:37:41Z
-        areal:
+        geom:
           type: MultiPolygon
           geometry:
             type: point
@@ -794,7 +795,7 @@ components:
         attributes:
           gyldighet:
             fra: 2025-11-20T11:37:41Z
-          areal:
+          geom:
             type: MultiPolygon
             geometry:
               type: point
@@ -1259,14 +1260,25 @@ components:
           BORTSKAFFING: '#/components/schemas/BortskaffingsMeldingDto'
           AREAL_MED_FOSFORKREVENDE_VEKSTER: '#/components/schemas/FosforkrevendeVeksterMeldingDto'
 
+    StedfesteType:
+      description: Hva denne stedfestingen benyttes til i akkurat denne sammenhengen.
+      type: string
+      enum:
+        - SPREDEAREAL
+        - LAGRINGSPUNKT
+        - VANNKILDE
+        - JORDPROEVE
+
     MeldingForespoerselDto:
       description: Inndata for en ny melding
       properties:
         melding:
           $ref: '#/components/schemas/MeldingDto'
         stedfester:
-          type: array
-          items:
+          type: object
+          propertyNames:
+            $ref: '#/components/schemas/StedfesteType'
+          additionalProperties:
             $ref: '#/components/schemas/stedfestingId'
         vedlegg:
           type: array
