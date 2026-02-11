@@ -23,6 +23,8 @@ Tjenesten benytter Maskinportens Systembruker-flyt for autentisering av organisa
 
 ### Oppsett av Maskinporten-klient
 Din organisasjon må signere dokumenter i [DigDirs samarbeidsportal](https://minside-samarbeid.digdir.no/my-organisation/integrations/admin) før klienten kan opprettes.
+Her kan det hende at du blir bedt om å sende en epost til servicedesk@digdir.no for å komme videre, og dette må gjøres
+før du kan fortsette.
 
 Deretter må integrasjonen registreres som en klient i Maskinporten. Dette kan gjøres via [selvbetjeningsportalen i test](https://sjolvbetjening.test.samarbeid.digdir.no)
 Autentiseringsmetode bør være private_key_jwt slik at fremtidige tokenforespørsler ikke sender over hemmeligheter i klartekst.
@@ -32,6 +34,9 @@ Gi klienten scopes:
 - **altinn:authentication/systemregister.write**
 - **altinn:authentication/systemuser.request.read**
 - **altinn:authentication/systemuser.request.write**
+
+De siste tre scopene er kun synlige og valgbare etter å ha fylt ut [dette skjemaet](https://forms.office.com/Pages/ResponsePage.aspx?id=D1aOAK8I7EygVrNUR1A5kcdP2Xp78HZOttvolvmHfSJUOFFBMThaOTI1UlVEVU9VM0FaTVZLMzg0Vi4u).
+Det er kun nødvendig å krysse av på "systembruker". Behandlingstid er typisk samme eller neste dag.
 
 Virksomhetens organisasjonsnummer må nå oversendes LDIR for godkjenning.
 Denne godkjenningen gis til alle foretak med hensiktsmessige behov for å bruke gjødselregisteret i testmiljøet.
