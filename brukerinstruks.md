@@ -23,8 +23,8 @@ Tjenesten benytter Maskinportens Systembruker-flyt for autentisering av organisa
 
 ### Oppsett av Maskinporten-klient
 Din organisasjon må signere dokumenter i [DigDirs samarbeidsportal](https://minside-samarbeid.digdir.no/my-organisation/integrations/admin) før klienten kan opprettes.
-Her kan det hende at du blir bedt om å sende en epost til servicedesk@digdir.no for å komme videre, og dette må gjøres
-før du kan fortsette.
+
+Om du ikke har tilgang til samarbeidsportalen, fyll ut [dette skjemaet](https://forms.office.com/Pages/ResponsePage.aspx?id=D1aOAK8I7EygVrNUR1A5kZbWwz0nwnRGrfJqFQYggctURTRCTFpCVklHODJYQ0NEMVNWSjNaWDVJSiQlQCN0PWcu).
 
 Deretter må integrasjonen registreres som en klient i Maskinporten. Dette kan gjøres via [selvbetjeningsportalen i test](https://sjolvbetjening.test.samarbeid.digdir.no)
 Autentiseringsmetode bør være private_key_jwt slik at fremtidige tokenforespørsler ikke sender over hemmeligheter i klartekst.
