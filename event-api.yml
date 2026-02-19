@@ -134,7 +134,7 @@ components:
                       description: Type melding (BRUK_AV_SLAM, BALANSEGJOEDSLING, etc)
                     status:
                       type: string
-                      enum: [INNSENDT, AKSEPTERT, AVVIST]
+                      enum: [MOTTATT, AKSEPTERT, UNDER_BEHANDLING, AVVIST]
                       description: Oppdatert status på meldingen
                   required: [type, status]
             type:

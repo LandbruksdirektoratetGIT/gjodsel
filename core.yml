@@ -201,7 +201,7 @@ paths:
       summary: Hent en gjødseltype
       description: Hent en gjødseltype identifisert med ID
       operationId: hentEnGjoedseltype
-      tags: [ gjoedseltype]
+      tags: [ gjoedseltype ]
       parameters:
         - name: gjoedseltypeId
           in: path
@@ -243,7 +243,7 @@ paths:
   /meldinger:
     get:
       summary: List opp meldinger
-      description: Hent en liste over tidligere innsendte meldinger som er relevante for dette landbruksforetaket.
+      description: Hent en liste over tidligere mottatte meldinger som er relevante for dette landbruksforetaket.
       operationId: hentAlleMeldinger
       tags: [ melding ]
       parameters:
@@ -361,7 +361,7 @@ paths:
   /soeknader:
     get:
       summary: List opp søknader
-      description: Hent en liste over tidligere innsendte søknader som er relevante for dette landbruksforetaket.
+      description: Hent en liste over tidligere mottatte søknader som er relevante for dette landbruksforetaket.
       operationId: hentAlleSoeknader
       tags: [ soeknad ]
       parameters:
@@ -553,7 +553,7 @@ components:
         /soeknader inneholder linker til vedtak og stedfesting, som kan inkluderes.
   responses:
     BadRequest:
-      description: En ugyldig forespørsel ble innsendt
+      description: En ugyldig forespørsel ble mottatt
       content:
         application/json:
           schema:
@@ -586,6 +586,10 @@ components:
           $ref: '#/components/schemas/tidspunkt'
         til:
           $ref: '#/components/schemas/tidspunkt'
+    prosent:
+      type: number
+      minimum: 0
+      maximum: 1
 
     # JSON:API basics
     LenkerBasisDto:
@@ -620,6 +624,8 @@ components:
         - MELDING
         - SOEKNAD
         - VEDTAK
+        - FORETAK
+        - FORVALTNINGSBRUKER
 
     ResponsData:
       type: object
@@ -643,6 +649,9 @@ components:
           MELDING: '#/components/schemas/MeldingResponsData'
           SOEKNAD: '#/components/schemas/SoeknadResponsData'
           VEDTAK: '#/components/schemas/VedtakResponsData'
+          FORETAK: '#/components/schemas/ForetakResponsData'
+          LEDETEKST: '#/components/schemas/LedetekstResponsData'
+          FORVALTNINGSBRUKER: '#/components/schemas/ForvaltningsbrukerResponsData'
 
     RessursIdentifikator:
       type: object
@@ -675,6 +684,8 @@ components:
       additionalProperties:
         type: object
         properties:
+          links:
+            $ref: '#/components/schemas/LenkerBasisDto'
           data:
             type: array
             items:
@@ -731,6 +742,43 @@ components:
           $ref: '#/components/schemas/LenkerPagineringDto'
       required: [ links ]
 
+    MatrikkelnummerDto:
+      type: object
+      properties:
+        kommunenummer:
+          type: string
+        gaardsnummer:
+          type: integer
+          format: int32
+        bruksnummer:
+          type: integer
+          format: int32
+        festenummer:
+          type: integer
+          format: int32
+      required:
+        - kommunenummer
+        - gaardsnummer
+        - bruksnummer
+        - festenummer
+
+    DriftssenterDto:
+      type: object
+      properties:
+        organisasjonsnummer:
+          type: string
+        grunneiendomMatrikkelnummer:
+          $ref: '#/components/schemas/MatrikkelnummerDto'
+        landbrukseiendomMatrikkelnummer:
+          $ref: '#/components/schemas/MatrikkelnummerDto'
+        aktiv:
+          type: boolean
+      required:
+        - organisasjonsnummer
+        - grunneiendomMatrikkelnummer
+        - landbrukseiendomMatrikkelnummer
+        - aktiv
+
     ForetakDto:
       type: object
       properties:
@@ -738,7 +786,26 @@ components:
           type: string
         orgNavn:
           type: string
-      required: [ id, type, orgNummer, orgNavn ]
+      required: [ orgNummer, orgNavn ]
+
+    ForetakResponsData:
+      allOf:
+        - $ref: '#/components/schemas/ResponsData'
+      properties:
+        attributes:
+          allOf:
+            - $ref: '#/components/schemas/ForetakDto'
+        links:
+          $ref: '#/components/schemas/LenkerBasisDto'
+      required: [ attributes ]
+    ForetakEnkelResponsDto:
+      allOf:
+        - $ref: '#/components/schemas/Respons'
+      properties:
+        data:
+          $ref: '#/components/schemas/ForetakResponsData'
+      required: [ data ]
+
     ArealType:
       description: Type areal stedfestet primært inneholder
       type: string
@@ -838,7 +905,7 @@ components:
           description: Beskrivende tittel på vedlegget
         vedleggType:
           type: string
-          enum: [ KARTSKISSE, FOTO, BREV, VAREDEKLARASJON, ANNET ]
+          enum: [ KARTSKISSE, FOTO, BREV, VAREDEKLARASJON, JORDPROEVE, ANNET ]
           description: Type vedlegg
         filType:
           type: string
@@ -921,17 +988,22 @@ components:
         - $ref: '#/components/schemas/KommentarBaseDto'
       properties:
         stedfester:
-          type: object
-          propertyNames:
-            $ref: '#/components/schemas/StedfesteType'
-          additionalProperties:
-            $ref: '#/components/schemas/stedfestingId'
+          type: array
+          items:
+            $ref: '#/components/schemas/StedfesteRef'
         vedlegg:
           type: array
           items:
             $ref: '#/components/schemas/id'
       example:
         tekst: Gammelt stedfesting fra eiendomsregisteret vedlagt.
+        stedfester:
+          - id: 1
+            type: SPREDEAREAL
+          - id: 2
+            type: LAGRINGSPUNKT
+          - id: 3
+            type: SPREDEAREAL
         vedlegg: [1, 2]
 
     ForfatterDto:
@@ -939,7 +1011,7 @@ components:
       properties:
         rolle:
           type: string
-          enum: [ FORETAK, KOMMUNE, STATSFORVALTER ]
+          enum: [ FORETAK, KOMMUNE, STATSFORVALTER, LDIR ]
           description: Forfatterens rolle i systemet
         navn:
           type: string
@@ -995,6 +1067,53 @@ components:
       required: [ data ]
 
     # Meldinger
+    BehandlingsmaateKode:
+      type: string
+      description: Metode for behandling av avløpsslam
+      enum: [G1, G2, G3, G4, G5, G6, K7, K8, K9, K10, K11]
+      x-enum-varnames:
+        - ANAEROB_STABILISERING_TERMISK_TORKING
+        - ANAEROB_STABILISERING_VAKUUMTORKING
+        - AEROB_TERMOFIL_FORBEHANDLING_ANAEROB_STABILISERING
+        - PASTEURISERING_ANAEROB_STABILISERING
+        - TERMISK_HYDROLYSE_ANAEROB_STABILISERING
+        - TERMOFIL_ANAEROB_STABILISERING
+        - VATKOMPOSTERING
+        - KALKTILSETTING_TIL_AVVANNET_SLAM
+        - REAKTORKOMPOSTERING
+        - RANKEKOMPOSTERING
+        - LANGTIDSLAGRING_OG_ENKEL_RANKEKOMPOSTERING
+      x-enum-descriptions:
+        - 'Anaerob stabilisering + termisk tørking - Utråtning under anaerobe forhold. Etterfølgende tørking med høy temperatur for hygienisering.'
+        - 'Anaerob stabilisering + vakuumtørking - Utråtning under anaerobe forhold for å gi minst mulig lukt. Etterfølgende tørking med høy temperatur for hygienisering i en spesiell tørkeprosess (med vakuum i en kammerfilterpresse) der tilsetting av kalk også inngår.'
+        - 'Aerob, termofil forbehandling + anaerob stabilisering - UTB-anlegg. Aerob, termofil forbehandling er samme prosess som våtkompostering. Ved å tilføre luft til reaktoren vil en aerob nedbryting starte. Temperaturen stiger til 60-65° C. Etter dette trinnet har man anaerob stabilisering.'
+        - 'Pasteurisering + anaerob stabilisering - Oppvarming til minst 65° C i minst 30 minutter. Oppvarmingen foregår delvis ved varmeveksling mot ferdig pasteurisert slam og delvis ved varmeveksling mot varmt vann. Etter pasteuriseringen følger anaerob stabilisering.'
+        - 'Termisk hydrolyse + anaerob stabilisering - Behandling og sterilisering ved termisk hydrolyse (ca. 165° C) og høyt trykk i ca. 20 minutter, etterfulgt av anaerob stabilisering.'
+        - 'Termofil, anaerob stabilisering - Utråtning ved en temperatur på ca. 55° C i minst 1,5 time.'
+        - 'Våtkompostering - Anaerob nedbrytning av det organiske stoffet før avvanning. Prosessen foregår i to seriekoblede lukkede, isolerte tanker med luftinnblåsing gjennom spesialkonstruerte luftere.'
+        - 'Kalktilsetting til avvannet slam - Orsa-metoden. Ved denne metoden tilsettes brent kalk i slike mengder at temperaturen kommer over 55° C og holdes på dette nivået i minst 2 timer, samtidig som pH-verdien øker.'
+        - 'Reaktorkompostering - Ved reaktorkompostering foregår første fase av komposteringen i en lukket reaktor. Komposten bør ettermodnes i ranker i minst to uker etterpå, med minst én vending i denne perioden. Temperaturen i rankene skal være over en viss verdi i en viss tid.'
+        - 'Rankekompostering - Ved rankekompostering av slam blandes avvannet slam med strukturmateriale (bark, kvist, hageavfall) og legges ut i ranker som vendes med jevne mellomrom (normalt to ganger i uken de første to ukene). Temperaturen i rankene skal være over en viss verdi i en viss tid.'
+        - 'Langtidslagring og enkel rankekompostering - Avvannet slam legges ut i hauger eller ranker i minst tre år. Det kan tilsettes strukturmateriale og foretas vendinger av slammet, men det er ikke noe temperaturkrav til slammet.'
+    SlamBeskrivelseDto:
+      type: object
+      description: Beskrivelse av avløpsslam og dets næringsinnhold
+      properties:
+        andelToerrstoff:
+          $ref: '#/components/schemas/prosent'
+        tungmetallKlasse:
+          type: string
+          enum: [ '0', I, II, III ]
+        behandlingsmaate:
+          $ref: '#/components/schemas/BehandlingsmaateKode'
+        andelTotalP:
+          description: Totalt fosforinnhold, prosent av tørrstoff
+          $ref: '#/components/schemas/prosent'
+        andelPlantetilgjengeligP:
+          description: Totalt plantetilgjengelig fosforinnhold, prosent av tørrstoff
+          $ref: '#/components/schemas/prosent'
+      required: [andelToerrstoff, tungmetallKlasse, behandlingsmaate, andelTotalP, andelPlantetilgjengeligP]
+
     GjoedselMengdeDto:
       type: object
       description: 'Dataobjekt for å oppgi mengde plantetilgjengelig fosfor og nitrogen i gjødselen som skal brukes'
@@ -1021,7 +1140,7 @@ components:
     GjoedselKategori:
       type: string
       enum: [ MINERALSK, ORGANISK, SLAM ]
-    Gjoedseltype:
+    GjoedseltypeDto:
       type: object
       properties:
         beskrivelse:
@@ -1044,7 +1163,7 @@ components:
       properties:
         attributes:
           allOf:
-            - $ref: '#/components/schemas/Gjoedseltype'
+            - $ref: '#/components/schemas/GjoedseltypeDto'
         links:
           $ref: '#/components/schemas/LenkerBasisDto'
       required: [ attributes ]
@@ -1077,22 +1196,24 @@ components:
             $ref: '#/components/schemas/GjoedseltypeResponsData'
       required: [ data ]
 
+    LedetekstDto:
+      properties:
+        navn:
+          type: string
+          description: JSONPath referanse til inndatafelt prefikset med typenavn
+        tittel:
+          type: string
+          description: Kort tittel som beskriver feltet
+        beskrivelse:
+          type: string
+          description: Lengre beskrivelse av feltet
+      required: [ navn, tittel, beskrivelse ]
     LedetekstResponsData:
       allOf:
         - $ref: '#/components/schemas/ResponsData'
       properties:
         attributes:
-          properties:
-            navn:
-              type: string
-              description: JSONPath referanse til inndatafelt prefikset med typenavn
-            tittel:
-              type: string
-              description: Kort tittel som beskriver feltet
-            beskrivelse:
-              type: string
-              description: Lengre beskrivelse av feltet
-          required: [ navn, tittel, beskrivelse ]
+          $ref: '#/components/schemas/LedetekstDto'
       required: [ attributes ]
       example:
         id: 0
@@ -1101,7 +1222,6 @@ components:
           navn: SlamMelding.spredetidspunkt
           tittel: Tidspunkt for slamspredning
           beskrivelse: Faktisk tidspunkt når slammet skal spres. Merk at dette tidspunktet må være *minst* 14 dager fra nå.
-
     LedetekstEnkelResponsDto:
       allOf:
         - $ref: '#/components/schemas/Respons'
@@ -1121,6 +1241,17 @@ components:
             $ref: '#/components/schemas/LedetekstResponsData'
       required: [ data ]
 
+    ForvaltningsbrukerResponsData:
+      allOf:
+        - $ref: '#/components/schemas/ResponsData'
+      properties:
+        attributes:
+          type: object
+          properties:
+            fornavn:
+              type: string
+            etternavn:
+              type: string
     MeldingsType:
       type: string
       description: Mulige gyldige gjødselmeldinger
@@ -1134,7 +1265,7 @@ components:
     MeldingsStatus:
       type: string
       description: Mulige gyldige tilstander på en melding
-      enum: [ INNSENDT, MOTTATT, AKSEPTERT, AVVIST ]
+      enum: [ MOTTATT, AKSEPTERT, UNDER_BEHANDLING, AVVIST ]
 
     SlamMeldingDto:
       description: >-
@@ -1148,36 +1279,44 @@ components:
           $ref: '#/components/schemas/TidsintervallDto'
         spredningsintervall:
           $ref: '#/components/schemas/TidsintervallDto'
+        totalTonn:
+          description: Mengde slam (tonn) som skal spres på arealene
+          type: number
         gjoedsel:
-          $ref: '#/components/schemas/GjoedselMengdeDto'
-        tungmetallKlasse:
-          type: string
-          enum: ['0', I, II, III]
+          $ref: '#/components/schemas/SlamBeskrivelseDto'
         leverandoerOrgNr:
           type: string
-        jordproeveId:
-          $ref: '#/components/schemas/jordproeveId'
         beskrivelser:
           type: object
           properties:
-            luktBegrensningVedUtkjoering:
+            innhentetKjennskapTilDrikkevannsbroenner:
+              type: boolean
+              description: Har gjødselbruker tatt kontakt med naboer for å få kjennskap til drikkevannsbrønner?
+            vannforekomsterOgForholdSomPaavirkerAvrenningsrisiko:
               type: string
-            luktbegrensningVedSpredning:
+              description: >-
+                Gi en kort beskrivelse av nærliggende vannforekomster, også drikkevannskilder,
+                og hvilke forhold som kan påvirke avrenningsrisiko
+            lokaleElementerPaavirketAvLukt:
               type: string
-            forurensingsfareBegrensning:
+              description: >-
+                Avløpsslam kan lukte sterkt og virke skjemmende for omkringliggende bebyggelse og ferdsel.
+                Gi en kort beskrivelse av nærliggende bebyggelse, veier, friluftsområder eller annet som kan bli skjemmet av lukt.
+            luktBegrensningVedLagringOgBruk:
               type: string
-            planlagtAvlingNeste3aar:
+              description: Hvordan vil gjødselbruker begrense ulemper knyttet til lukt under lagring og bruk?
+            forurensningBegrensningVedLagringOgBruk:
               type: string
-          required: [ luktBegrensningVedUtkjoering, luktbegrensningVedSpredning, forurensingsfareBegrensning, planlagtAvlingNeste3aar ]
-        historikk:
-          type: object
-          properties:
-            sisteSprededato:
-              description: Dato for siste spredning av slam på området om dette har forekommet de siste 10 årene
-              $ref: '#/components/schemas/tidspunkt'
-            tonnPerDekarSisteSpredning:
-              type: number
-      required: [ lagringsperiode, spredningsintervall, gjoedsel, tungmetallKlasse, leverandoerOrgNr, jordproeveId, beskrivelser, historikk ]
+              description: Hvordan vil gjødselbruker forhindre forurensning av vassdrag og drikkevann under lagring og bruk?
+            annet:
+              type: string
+          required:
+            - innhentetKjennskapTilDrikkevannsbroenner
+            - vannforekomsterOgForholdSomPaavirkerAvrenningsrisiko
+            - lokaleElementerPaavirketAvLukt
+            - luktBegrensningVedLagringOgBruk
+            - forurensningBegrensningVedLagringOgBruk
+      required: [ spredningsintervall, totalTonn, gjoedsel, leverandoerOrgNr, beskrivelser ]
     BalansegjoedslingMeldingDto:
       description: >-
         Melding om at foretaket igangsetter en treårsperiode med balansegjødsling som tilsidesetter ordinære
@@ -1299,17 +1438,23 @@ components:
         - VANNKILDE
         - JORDPROEVE
 
+    StedfesteRef:
+      type: object
+      properties:
+        type:
+          $ref: '#/components/schemas/StedfesteType'
+        id:
+          $ref: '#/components/schemas/stedfestingId'
+
     MeldingForespoerselDto:
       description: Inndata for en ny melding
       properties:
         melding:
           $ref: '#/components/schemas/MeldingDto'
         stedfester:
-          type: object
-          propertyNames:
-            $ref: '#/components/schemas/StedfesteType'
-          additionalProperties:
-            $ref: '#/components/schemas/stedfestingId'
+          type: array
+          items:
+            $ref: '#/components/schemas/StedfesteRef'
         vedlegg:
           type: array
           items:
@@ -1318,29 +1463,50 @@ components:
       example:
         melding:
           type: BRUK_AV_SLAM
-          spredetidspunkt: 2025-11-20T11:37:41Z
-          behandlingsmaate: Høytemperaturhygienisert
+          lagringsperiode:
+            fra: '2026-01-21T09:23:44Z'
+            til: '2026-02-05T09:23:44Z'
+          spredningsintervall:
+            fra: '2026-02-05T09:23:44Z'
+            til: '2026-02-06T09:23:44Z'
+          totalTonn: 1250.5
           gjoedsel:
-            mengdePlantetilgjengeligPKg: 200
-            mengdePlantetilgjengeligNKg: 2000
-          jordproeveId: 3fa85f64-5717-4562-b3fc-2c963f66afa6
-          andreForhold: Nedmoldes senest 8 timer etter spredning
-        stedfester: [1, 2, 3]
-        vedlegg: [1, 2]
-
+            andelToerrstoff: 0.255
+            tungmetallKlasse: 'II'
+            behandlingsmaate: 'Stabilisert'
+            andelTotalP: 0.15
+            andelPlantetilgjengeligP: 0.1
+          leverandoerOrgNr: '123456789'
+          beskrivelser:
+            innhentetKjennskapTilDrikkevannsbroenner: true
+            vannforekomsterOgForholdSomPaavirkerAvrenningsrisiko: 'Bekk 100m sør for arealet. Moderat helning mot vest.'
+            lokaleElementerPaavirketAvLukt: 'Nærmeste bebyggelse 500m nord. Tursti 200m øst.'
+            luktBegrensningVedLagringOgBruk: 'Nedmolding innen 6 timer. Bruk av bark som tildekking ved lagring.'
+            forurensningBegrensningVedLagringOgBruk: 'Ingen spredning ved nedbør. Buffersone 15m mot vassdrag.'
+            annet: 'Spredning planlagt i tørre perioder'
+        stedfester:
+          - id: 1
+            type: SPREDEAREAL
+          - id: 2
+            type: LAGRINGSPUNKT
+          - id: 3
+            type: SPREDEAREAL
+        vedlegg: [ 1, 2 ]
     MeldingResponsData:
       allOf:
         - $ref: '#/components/schemas/ResponsData'
       properties:
         attributes:
           properties:
-            innsendt:
+            mottatt:
               $ref: '#/components/schemas/tidspunkt'
             status:
               $ref: '#/components/schemas/MeldingsStatus'
+            frist:
+              $ref: '#/components/schemas/tidspunkt'
             melding:
               $ref: '#/components/schemas/MeldingDto'
-          required: [ innsendt, status, melding, links ]
+          required: [ mottatt, status, melding, links ]
         links:
           allOf:
             - $ref: '#/components/schemas/LenkerBasisDto'
@@ -1359,8 +1525,9 @@ components:
         id: 0
         type: MELDING
         attributes:
-          innsendt: 2025-11-20T11:37:41Z
-          status: INNSENDT
+          mottatt: 2025-11-20T11:37:41Z
+          status: MOTTATT
+          frist: 2025-12-4T11:37:41Z
           melding:
             type: BRUK_AV_SLAM
             spredetidspunkt: 2025-11-20T11:37:41Z
@@ -1403,7 +1570,7 @@ components:
       enum: [ INNMARKSBEITE_SOM_SPREDEAREAL, GJOEDSLING_OVER_GRENSEVERDIER ]
     SoeknadsStatus:
       description: Mulige tilstander til en søknad
-      enum: [ INNSENDT, MOTTATT, UNDER_BEHANDLING, TILBAKESENDT, BEHANDLET ]
+      enum: [ MOTTATT, UNDER_BEHANDLING, TILBAKESENDT, BEHANDLET ]
 
     SoeknadDto:
       description: >-
@@ -1425,11 +1592,9 @@ components:
         soeknad:
           $ref: '#/components/schemas/SoeknadDto'
         stedfester:
-          type: object
-          propertyNames:
-            $ref: '#/components/schemas/StedfesteType'
-          additionalProperties:
-            $ref: '#/components/schemas/stedfestingId'
+          type: array
+          items:
+            $ref: '#/components/schemas/StedfesteRef'
         vedlegg:
           type: array
           items:
@@ -1438,7 +1603,13 @@ components:
       example:
         soeknad:
           type: INNMARKSBEITE_SOM_SPREDEAREAL
-        stedfester: [1, 2, 3]
+        stedfester:
+          - id: 1
+            type: SPREDEAREAL
+          - id: 2
+            type: LAGRINGSPUNKT
+          - id: 3
+            type: SPREDEAREAL
         vedlegg: [1, 2]
 
     InnmarksbeiteSomSpredearealSoeknadDto:
@@ -1525,7 +1696,7 @@ components:
     VedtakDto:
       description: >-
         Vedtak er enten avgjørelser
-        fattet av forvaltningen som svar på en tidligere innsendt sak, eller ad-hoc vedtak gjort som følge av endrede
+        fattet av forvaltningen som svar på en tidligere mottatt sak, eller ad-hoc vedtak gjort som følge av endrede
         forhold i fylket eller områdene rundt landbruksforetaket.
       type: object
       properties:
