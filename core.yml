@@ -103,7 +103,7 @@ paths:
         200:
           description: Ett enkelt vedlegg
           content:
-            application/octet-stream:
+            '*/*':
               schema:
                 type: string
                 format: binary
@@ -146,7 +146,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/StedfesteDto'
+              $ref: '#/components/schemas/StedfesteForespoerselDto'
       responses:
         201:
           description: Opprettet stedfeste
@@ -301,18 +301,26 @@ paths:
             application/vnd.api+json:
               schema:
                 $ref: '#/components/schemas/MeldingEnkelResponsDto'
-    delete:
-      summary: Trekk tilbake en melding
-      description: >-
-        Trekk tilbake en melding identifisert med ID.
-        MERK: Meldingen kan KUN slettes frem til den har blitt åpnet av forvaltningen!
-      operationId: slettEnMelding
+  /meldinger/{meldingId}/svar:
+    parameters:
+      - name: meldingId
+        in: path
+        schema:
+          type: integer
+        required: true
+        description: ID til meldingen
+    get:
+      summary: Hent et svarbrev
+      description: Når en melding er ferdig saksbehandlet, vil et svarbrev forekomme på dette endepunktet. Brevet er på Markdown-format.
+      operationId: hentEtSvarbrev
       tags: [ melding ]
       responses:
-        204:
-          description: Søknaden er trukket
-        400:
-          $ref: '#/components/responses/BadRequest'
+        200:
+          description: Et svarbrev fra forvaltningen
+          content:
+            application/vnd.api+json:
+              schema:
+                $ref: '#/components/schemas/SvarbrevEnkelResponsDto'
   /meldinger/{meldingId}/kommentarer:
     parameters:
       - name: meldingId
@@ -419,15 +427,6 @@ paths:
             application/vnd.api+json:
               schema:
                 $ref: '#/components/schemas/SoeknadEnkelResponsDto'
-    delete:
-      summary: Trekk tilbake en søknad
-      description: >-
-        Trekk tilbake en søknad identifisert med ID. MERK: Søknaden kan KUN slettes frem til søknadsbehandlingen starter!
-      operationId: slettEnSoeknad
-      tags: [ soeknad ]
-      responses:
-        204:
-          description: Søknaden er trukket tilbake
   /soeknader/{soeknadId}/kommentarer:
     parameters:
       - name: soeknadId
@@ -590,6 +589,10 @@ components:
       type: number
       minimum: 0
       maximum: 1
+    Maalform:
+      description: Ønsket målform på alle svar fra forvaltningen
+      type: string
+      enum: [NB, NN]
 
     # JSON:API basics
     LenkerBasisDto:
@@ -619,6 +622,7 @@ components:
         - STEDFESTE
         - VEDLEGG
         - KOMMENTAR
+        - SAKSMAL
         - GJOEDSELTYPE
         - LEDETEKST
         - MELDING
@@ -626,6 +630,11 @@ components:
         - VEDTAK
         - FORETAK
         - FORVALTNINGSBRUKER
+        - SAKSBEHANDLER
+        - SVARBREV
+        - BREVRAMME
+        - AUDITLOG
+        - NOTAT
 
     ResponsData:
       type: object
@@ -652,6 +661,11 @@ components:
           FORETAK: '#/components/schemas/ForetakResponsData'
           LEDETEKST: '#/components/schemas/LedetekstResponsData'
           FORVALTNINGSBRUKER: '#/components/schemas/ForvaltningsbrukerResponsData'
+          SAKSBEHANDLER: '#/components/schemas/SaksbehandlerResponsData'
+          SVARBREV: '#/components/schemas/SvarbrevResponsData'
+          BREVRAMME: '#/components/schemas/BrevrammeResponsData'
+          AUDITLOG: '#/components/schemas/AuditLogResponsData'
+          NOTAT: '#/components/schemas/NotatResponsData'
 
     RessursIdentifikator:
       type: object
@@ -834,6 +848,15 @@ components:
                 [ 9.71369309087677,59.02493739117233 ],
                 [ 9.712802597483826,59.025633125379414 ],
                 [ 9.710581728419495,59.02571594994279 ] ] ] ]
+    StedfesteForespoerselDto:
+      description: Inndata for en ny stedfeste
+      properties:
+        stedfeste:
+          $ref: '#/components/schemas/StedfesteDto'
+        foretakOrgNr:
+          type: string
+      required: [ stedfeste ]
+
     StedfesteResponsData:
       type: object
       allOf:
@@ -852,7 +875,9 @@ components:
               format: uuid
             arealType:
               $ref: '#/components/schemas/ArealType'
-          required: [ opprettet, eiendomId, arealType ]
+            innsender:
+              $ref: '#/components/schemas/ForfatterDto'
+          required: [ opprettet, eiendomId, arealType, innsender ]
         links:
           $ref: '#/components/schemas/LenkerBasisDto'
       required: [ attributes ]
@@ -922,6 +947,8 @@ components:
         fil:
           type: string
           format: binary
+        foretakOrgNr:
+          type: string
       required: [ fil ]
       example:
         tittel: Gammelt stedfesting
@@ -942,7 +969,9 @@ components:
           properties:
             fil:
               $ref: '#/components/schemas/url'
-          required: [ fil ]
+            opplaster:
+              $ref: '#/components/schemas/ForfatterDto'
+          required: [ fil, opplaster ]
       required: [ attributes, links ]
       example:
         id: 0
@@ -987,6 +1016,8 @@ components:
       allOf:
         - $ref: '#/components/schemas/KommentarBaseDto'
       properties:
+        rolle:
+          $ref: '#/components/schemas/ForfatterRolle'
         stedfester:
           type: array
           items:
@@ -995,6 +1026,9 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/id'
+        publisert:
+          type: boolean
+      required: [ rolle, publisert ]
       example:
         tekst: Gammelt stedfesting fra eiendomsregisteret vedlagt.
         stedfester:
@@ -1005,14 +1039,16 @@ components:
           - id: 3
             type: SPREDEAREAL
         vedlegg: [1, 2]
+    ForfatterRolle:
+      type: string
+      enum: [ FORETAK, KOMMUNE, MILJORETTET_HELSEVERN, STATSFORVALTER, LDIR ]
+      description: Forfatterens rolle i systemet
 
     ForfatterDto:
       type: object
       properties:
         rolle:
-          type: string
-          enum: [ FORETAK, KOMMUNE, STATSFORVALTER, LDIR ]
-          description: Forfatterens rolle i systemet
+          $ref: '#/components/schemas/ForfatterRolle'
         navn:
           type: string
           description: Navn på forfatteren
@@ -1028,9 +1064,13 @@ components:
           properties:
             forfatter:
               $ref: '#/components/schemas/ForfatterDto'
+            publisert:
+              $ref: '#/components/schemas/tidspunkt'
+            oppdatert:
+              $ref: '#/components/schemas/tidspunkt'
             tidspunkt:
               $ref: '#/components/schemas/tidspunkt'
-          required: [ forfatter, tidspunkt ]
+          required: [ forfatter, oppdatert, tidspunkt ]
         links:
           $ref: '#/components/schemas/LenkerBasisDto'
       required: [ attributes ]
@@ -1241,17 +1281,71 @@ components:
             $ref: '#/components/schemas/LedetekstResponsData'
       required: [ data ]
 
+    ForvaltningsbrukerAttributes:
+      properties:
+        fornavn:
+          type: string
+        etternavn:
+          type: string
+    SaksbehandlerAttributes:
+      allOf:
+        - $ref: '#/components/schemas/ForvaltningsbrukerAttributes'
+
     ForvaltningsbrukerResponsData:
+      allOf:
+        - $ref: '#/components/schemas/ResponsData'
+      properties:
+        attributes:
+          $ref: '#/components/schemas/ForvaltningsbrukerAttributes'
+      required: [ attributes ]
+
+    SaksbehandlerResponsData:
+      allOf:
+        - $ref: '#/components/schemas/ResponsData'
+      properties:
+        attributes:
+          $ref: '#/components/schemas/SaksbehandlerAttributes'
+      required: [ attributes ]
+
+    SvarbrevResponsData:
       allOf:
         - $ref: '#/components/schemas/ResponsData'
       properties:
         attributes:
           type: object
           properties:
-            fornavn:
+            brodtekst:
+              description: Markdown-formatert brødtekst
               type: string
-            etternavn:
-              type: string
+          required: [ brodtekst ]
+      required: [ attributes ]
+      example:
+        id: 0
+        type: SVARBREV
+        attributes:
+          brodtekst: >-
+            #Svar fra kommunen
+            *saksbehandler*: Kenneth kommune
+            ##Saksbehandlers kommentar
+            Meldingen godtas uten merknader
+    SvarbrevEnkelResponsDto:
+      allOf:
+        - $ref: '#/components/schemas/Respons'
+      properties:
+        data:
+          $ref: '#/components/schemas/SvarbrevResponsData'
+      required: [ data ]
+
+    BrevrammeResponsData:
+      allOf:
+        - $ref: '#/components/schemas/ResponsData'
+    AuditLogResponsData:
+      allOf:
+        - $ref: '#/components/schemas/ResponsData'
+    NotatResponsData:
+      allOf:
+        - $ref: '#/components/schemas/ResponsData'
+
     MeldingsType:
       type: string
       description: Mulige gyldige gjødselmeldinger
@@ -1418,6 +1512,9 @@ components:
       properties:
         type:
           $ref: '#/components/schemas/MeldingsType'
+        maalform:
+          $ref: '#/components/schemas/Maalform'
+
       required: [ type ]
       discriminator:
         propertyName: type
@@ -1451,6 +1548,8 @@ components:
       properties:
         melding:
           $ref: '#/components/schemas/MeldingDto'
+        foretak:
+          $ref: '#/components/schemas/ForetakDto'
         stedfester:
           type: array
           items:
@@ -1459,7 +1558,7 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/id'
-      required: [ melding ]
+      required: [ melding, foretak ]
       example:
         melding:
           type: BRUK_AV_SLAM
@@ -1500,13 +1599,19 @@ components:
           properties:
             mottatt:
               $ref: '#/components/schemas/tidspunkt'
+            saksbehandling:
+              $ref: '#/components/schemas/TidsintervallDto'
             status:
               $ref: '#/components/schemas/MeldingsStatus'
             frist:
               $ref: '#/components/schemas/tidspunkt'
             melding:
               $ref: '#/components/schemas/MeldingDto'
-          required: [ mottatt, status, melding, links ]
+            foretakOrgNr:
+              type: string
+            innsender:
+              $ref: '#/components/schemas/ForfatterDto'
+          required: [ mottatt, status, melding, links, foretakOrgNr, innsender ]
         links:
           allOf:
             - $ref: '#/components/schemas/LenkerBasisDto'
@@ -1515,11 +1620,9 @@ components:
               $ref: '#/components/schemas/url'
             gjoedselType:
               $ref: '#/components/schemas/url'
-            foretak:
-              $ref: '#/components/schemas/url'
             kommentarer:
               $ref: '#/components/schemas/url'
-          required: [ foretak, kommentarer ]
+          required: [ kommentarer ]
       required: [ attributes, links ]
       example:
         id: 0
@@ -1570,7 +1673,7 @@ components:
       enum: [ INNMARKSBEITE_SOM_SPREDEAREAL, GJOEDSLING_OVER_GRENSEVERDIER ]
     SoeknadsStatus:
       description: Mulige tilstander til en søknad
-      enum: [ MOTTATT, UNDER_BEHANDLING, TILBAKESENDT, BEHANDLET ]
+      enum: [ MOTTATT, UNDER_BEHANDLING, TIL_GODKJENNING, TILBAKESENDT, BEHANDLET ]
 
     SoeknadDto:
       description: >-
@@ -1579,6 +1682,8 @@ components:
       properties:
         type:
           $ref: '#/components/schemas/SoeknadsType'
+        maalform:
+          $ref: '#/components/schemas/Maalform'
       required: [ type ]
       discriminator:
         propertyName: type
@@ -1591,6 +1696,8 @@ components:
       properties:
         soeknad:
           $ref: '#/components/schemas/SoeknadDto'
+        foretak:
+          $ref: '#/components/schemas/ForetakDto'
         stedfester:
           type: array
           items:
@@ -1599,7 +1706,7 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/id'
-      required: [ soeknad ]
+      required: [ soeknad, foretak ]
       example:
         soeknad:
           type: INNMARKSBEITE_SOM_SPREDEAREAL
@@ -1638,9 +1745,13 @@ components:
               $ref: '#/components/schemas/tidspunkt'
             status:
               $ref: '#/components/schemas/SoeknadsStatus'
+            foretakOrgNr:
+              type: string
+            innsender:
+              $ref: '#/components/schemas/ForfatterDto'
             soeknad:
               $ref: '#/components/schemas/SoeknadDto'
-          required: [ opprettet, status, soeknad ]
+          required: [ opprettet, status, innsender, foretakOrgNr, soeknad ]
         links:
           allOf:
             - $ref: '#/components/schemas/LenkerBasisDto'

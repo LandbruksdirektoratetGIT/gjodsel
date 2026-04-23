@@ -1,0 +1,69 @@
+openapi: 3.0.1
+info:
+  title: OpenAPI definition
+  version: v1
+  description: >
+    Innrullering av gjødselbrukere til et sluttbrukersystem. En konsument må først hente et
+    Maskinporten-token med `authorization_details`-claim som identifiserer gjødselbrukeren som
+    skal innrulleres, og deretter kalle `PUT /api/konsumenter` for å knytte denne organisasjonen
+    til sitt system.
+  
+    Innrullerte gjødselbrukere kan listes med `GET /api/konsumenter`, og rulles ut med
+    `DELETE /api/konsumenter?dataEierOrgNr={orgnr}`.
+  
+    Når ønsket innrullering er etablert, hentes et nytt Maskinporten-token *uten*
+    `authorization_details` i forespørselen. Et slikt token representerer sluttbrukersystemet
+    og gir tilgang til hendelser for samtlige innrullerte gjødselbrukere via
+    WebSocket-tilkoblingen. (Se event-api.yml)
+  
+    Hendelseskøene er isolerte per konsument: flere sluttbrukersystemer kan konsumere hendelser
+    for samme gjødselbruker parallelt uten å forstyrre hverandre. Bruk av token med
+    `authorization_details`-claim gir tilgang til hendelser for én spesifikk gjødselbruker,
+    uavhengig av om andre systemer konsumerer hendelser samtidig.
+servers:
+  - url: 'https://gjoedsel-event-api-utv.non-prod.landbruksdirektoratet.no/'
+    description: UTV testmiljø
+paths:
+  /api/konsumenter:
+    get:
+      tags:
+        - konsument
+      summary: Hent registrerte konsumenter
+      description: Returnerer alle samtykkeorganisasjoner knyttet til den overordnede
+        organisasjonen i tokenet
+      operationId: hentKonsumenter
+      responses:
+        "200":
+          description: Liste over konsumenter
+          content:
+            '*/*':
+              schema:
+                type: array
+                items:
+                  type: string
+    put:
+      tags:
+        - konsument
+      summary: Registrer en konsument
+      description: Knytter en gjødselbrukers hendelsesstrøm til et SBS's organisasjon
+      operationId: registrerKonsument
+      responses:
+        "201":
+          description: Konsument registrert
+    delete:
+      tags:
+        - konsument
+      summary: Fjern en konsument
+      description: Fjerner en gjødselbrukers hendelsesstrøm fra et SBS's organisasjon
+      operationId: fjernKonsument
+      parameters:
+        - name: dataEierOrgNr
+          in: query
+          required: false
+          schema:
+            type: string
+      responses:
+        "201":
+          description: Konsument registrert
+        "204":
+          description: No Content
