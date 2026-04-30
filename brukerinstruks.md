@@ -31,7 +31,6 @@ Autentiseringsmetode bør være private_key_jwt slik at fremtidige tokenforespø
 
 Gi klienten scopes:
 - **ldir:gjodsel**: dette vil gi deg en advarsel i grensesnittet helt frem til LDIR godkjenner integrasjonen din.
-- **altinn:authentication/systemregister.write**
 - **altinn:authentication/systemuser.request.read**
 - **altinn:authentication/systemuser.request.write**
 
