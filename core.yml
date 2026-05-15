@@ -635,6 +635,7 @@ components:
         - BREVRAMME
         - AUDITLOG
         - NOTAT
+        - SAKSSTATISTIKK
 
     ResponsData:
       type: object
@@ -1039,9 +1040,10 @@ components:
           - id: 3
             type: SPREDEAREAL
         vedlegg: [1, 2]
+
     ForfatterRolle:
       type: string
-      enum: [ FORETAK, KOMMUNE, MILJORETTET_HELSEVERN, STATSFORVALTER, LDIR ]
+      enum: [ FORETAK, KOMMUNE, MILJORETTET_HELSEVERN, STATSFORVALTER, LDIR, MASKIN ]
       description: Forfatterens rolle i systemet
 
     ForfatterDto:
